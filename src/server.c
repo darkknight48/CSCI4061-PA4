@@ -14,6 +14,28 @@ void write_to_log_file(){}
     connection and return.*/
 void pass_to_worker(){}
 
+//msg_enum e = REGISTER;
+
+const char* getMsgEnum(enum msg_enum msg) 
+{
+   switch (msg) 
+   {
+       case REGISTER: return "REGISTER";
+       case GET_ACCOUNT_INFO: return "GET_ACCOUNT_INFO";
+       case TRANSACT: return "TRANSACT";
+       case GET_BALANCE: return "GET_BALNCE";
+       case ACCOUNT_INFO: return "ACCOUNT_INFO";
+       case BALANCE: return "BALANCE";
+       case REQUEST_CASH: return "";
+       case CASH: return "CASH";
+       case ERROR: return "ERROR";
+       case TERMINATE: return "TERMINATE";
+       case REQUEST_HISTORY: return "REQUEST_HISTORY";
+       case HISTORY: return "HISTORY";
+   }
+}
+
+
 int main(int argc, char *argv[]){
     // argument handling
     if(argc != 4)
