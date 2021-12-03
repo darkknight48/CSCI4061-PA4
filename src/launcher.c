@@ -4,19 +4,7 @@
 #include <unistd.h>
 #include <sys/wait.h>
 
-void printSyntax(){
-    printf("incorrect usage syntax! \n");
-    printf("usage: $ ./launcher server_addr server_port num_workers input_file [input_file] [input_file] ...\n");
-}
-
-/* DO NOT MODIFY */
 int main(int argc, char *argv[]){
-    // argument handling
-    if(argc < 5)
-    {
-        printSyntax();
-        return 0;
-    }
 
     // fork and exec the server
     pid_t server_pid;
@@ -31,7 +19,7 @@ int main(int argc, char *argv[]){
     }
     
     // sleep to let the server start
-    sleep(1);
+    sleep(4);
 
     unsigned char c = 4;
     char name[10];
@@ -62,8 +50,7 @@ int main(int argc, char *argv[]){
         }
     }
 
-    // sleep to let the server experience a log action
-    sleep(31);
+    sleep(6);
 
     // send terminate signal to the server
     if((kill(server_pid, SIGTERM))== -1)
