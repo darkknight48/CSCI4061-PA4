@@ -13,11 +13,11 @@ void printSyntax(){
 
 int main(int argc, char *argv[]){
     // argument handling
-    if(argc != 4)
+    /*if(argc != 4)  commented out for interim submission
     {
         printSyntax();
         return 0;
-    }
+    }*/
 
 
     int sockfd, connfd;
@@ -28,8 +28,8 @@ int main(int argc, char *argv[]){
     if (sockfd == -1) {
         printf("Socket creation failed...\n");
         exit(0);
-    } else
-        printf("Socket created...\n");
+    } //else
+        //printf("Socket created...\n");
     bzero(&servaddr, sizeof(servaddr));
 
     // assign IP, PORT
@@ -42,10 +42,12 @@ int main(int argc, char *argv[]){
     if (connect(sockfd, (SA *) &servaddr, sizeof(servaddr)) != 0) {
         printf("Connection with the server failed...\n");
         exit(0);
-    } else
-        printf("Connected with server\n");
+    } //else
+        //printf("Connected with server\n");
 
-for(int i = REGISTER; i <= TERMINATE; i++){
+int i = REGISTER;
+while(1){
+    
     char msgID[MAX];
     memset(msgID, 0, MAX);
     sprintf(msgID, "%d", i);
@@ -53,8 +55,6 @@ for(int i = REGISTER; i <= TERMINATE; i++){
         perror("Cannot write");
         exit(1);
     }
-}
-while(1){
 
     char recv[MAX];
     memset(recv, 0, MAX);
@@ -63,31 +63,14 @@ while(1){
         exit(1);
     }
 
-    int temp = atoi(recv);
-    if(temp == 0){
-        printf("REGISTER\n");
-    }else if(temp == 1){
-        printf("GET_ACCOUNT_INFO\n");
-    }else if(temp == 2){
-        printf("TRANSACT\n");
-    }else if(temp == 3){
-        printf("GET_BALANCE\n");
-    }else if(temp == 4){
-        printf("ACCOUNT_INFO\n");
-    }else if(temp == 5){
-        printf("BALANCE\n");
-    }else if(temp == 6){
-        printf("REQUEST_CASH\n");
-    }else if(temp == 7){
-        printf("CASH\n");
-    }else if(temp == 8){
-        printf("ERROR\n");
-    }else if(temp == 9){
-        printf("TERMINATE\n");
+    msg_enum msgEnum = atoi(recv);
+    char *strEnum = getMsgEnum(msgEnum);
+    printf("%s : %d\n", strEnum, msgEnum);
+    if(msgEnum == TERMINATE){
         break;
     }
 
-
+    i++;
 }
     // close the socket
     close(sockfd);

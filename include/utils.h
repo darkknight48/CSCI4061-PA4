@@ -53,10 +53,12 @@ struct message
     float *history;
 };
 
-void writeMessage(int, struct message);
-bool readMessage(int, struct message *);
+//void writeMessage(int, struct message);
+//bool readMessage(int, struct message *);
 
 void bookeepingCode();
+
+char* getMsgEnum(msg_enum msg);
 
 #endif
 

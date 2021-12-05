@@ -22,11 +22,11 @@ void printSyntax(){
 
 int main(int argc, char *argv[]){
     // argument handling
-    if(argc != 4)
+    /*if(argc != 4)    commented out for interim submission
     {
         printSyntax();
         return 0;
-    }
+    }*/
     
     int sockfd, connfd, len;
     struct sockaddr_in servaddr, cli;
@@ -55,21 +55,20 @@ int main(int argc, char *argv[]){
         printf("Listen failed...\n");
         exit(0);
     } else
-        printf("Listening...\n");
+        //printf("Listening...\n");
     len = sizeof(cli);
 
 
         // TODO: complete the next line with accept()
-        connfd = accept(sockfd, (SA *) &cli, &len);
+        connfd = accept(sockfd, (SA *) &cli, &len); // blocks if doesn't have a connection
         if (connfd < 0) {
             printf("Server accept failed...\n");
             exit(0);
         } 
-        printf("Server accepted connection\n");
+        //printf("Server accepted connection\n");
     char msgid[MAX];
     while(1){
             // Function for chatting between client and server
-
 
         memset(msgid, 0, MAX);
 
@@ -80,29 +79,13 @@ int main(int argc, char *argv[]){
         }
 
 
-   int temp = atoi(msgid);
-    if(temp == 0){
-        printf("REGISTER\n");
-    }else if(temp == 1){
-        printf("GET_ACCOUNT_INFO\n");
-    }else if(temp == 2){
-        printf("TRANSACT\n");
-    }else if(temp == 3){
-        printf("GET_BALANCE\n");
-    }else if(temp == 4){
-        printf("ACCOUNT_INFO\n");
-    }else if(temp == 5){
-        printf("BALANCE\n");
-    }else if(temp == 6){
-        printf("REQUEST_CASH\n");
-    }else if(temp == 7){
-        printf("CASH\n");
-    }else if(temp == 8){
-        printf("ERROR\n");
-    }else if(temp == 9){
-        printf("TERMINATE\n");
-        break;
-    }
+   msg_enum msgEnum = atoi(msgid);
+   char *strEnum = getMsgEnum(msgEnum);
+   printf("%s : %d\n", strEnum, msgEnum);
+   if(msgEnum == TERMINATE){
+       break;
+   }
+
 
         if (write(connfd, msgid, strlen(msgid)) < 0) {
             perror("write error");
@@ -116,6 +99,7 @@ int main(int argc, char *argv[]){
     }
     // Server never shut down
     close(connfd);
+    close(sockfd);
 
     // create empty output folder
     //bookeepingCode();
