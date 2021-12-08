@@ -1,4 +1,4 @@
-#include "client.h"
+#include "server.h"
 
 #define LOCALHOST "127.0.0.1"
 #define MAX 516
@@ -8,76 +8,112 @@
 
 void printSyntax(){
     printf("incorrect usage syntax! \n");
-    printf("usage: $ ./client input_filename server_addr server_port\n");
+    printf("usage: $ ./server server_addr server_port num_workers\n");
 }
+
+//void write_to_log_file(){}
+
+/*A worker thread will parse each query 
+    received and reply with the appropriate response. If it modifies the global balance 
+    datastructure, it should signal the log thread’s condition variable. This will continue 
+    until it receives a TERMINATE query from the client. It will then close the 
+    connection and return.*/
+//void pass_to_worker(){}
 
 int main(int argc, char *argv[]){
     // argument handling
-    /*if(argc != 4)  commented out for interim submission
+    /*if(argc != 4)    commented out for interim submission
     {
         printSyntax();
         return 0;
     }*/
-
-
-    int sockfd, connfd;
+    
+    int sockfd, connfd, len;
     struct sockaddr_in servaddr, cli;
-    // socket create and verification
-    // TODO: complete next line (socket)
+
+    // TODO: complete the next line with socket()
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd == -1) {
         printf("Socket creation failed...\n");
         exit(0);
-    } //else
-        //printf("Socket created...\n");
+    } 
     bzero(&servaddr, sizeof(servaddr));
 
     // assign IP, PORT
     servaddr.sin_family = AF_INET;
-    servaddr.sin_addr.s_addr = inet_addr(LOCALHOST);
+    servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
     servaddr.sin_port = htons(PORT);
 
-    // connect the client socket to server socket
-    // TODO: fill out if condition (connect)
-    if (connect(sockfd, (SA *) &servaddr, sizeof(servaddr)) != 0) {
-        printf("Connection with the server failed...\n");
+    // TODO: fill out if-condition with bind()
+    if ((bind(sockfd, (SA *) &servaddr, sizeof(servaddr))) != 0) {
+        printf("Socket bind failed...\n");
         exit(0);
-    } //else
-        //printf("Connected with server\n");
+    } 
 
-int i = REGISTER;
-while(1){
-    
-    char msgID[MAX];
-    memset(msgID, 0, MAX);
-    sprintf(msgID, "%d", i);
-    if (write(sockfd, msgID, strlen(msgID)) < 0) {
-        perror("Cannot write");
+    // TODO: fill out if-condition with listen()
+    if ((listen(sockfd, 1)) != 0) {
+        printf("Listen failed...\n");
+        exit(0);
+    } else
+        //printf("Listening...\n");
+    len = sizeof(cli);
+
+
+        // TODO: complete the next line with accept()
+        connfd = accept(sockfd, (SA *) &cli, &len); // blocks if doesn't have a connection
+        if (connfd < 0) {
+            printf("Server accept failed...\n");
+            exit(0);
+        } 
+        //printf("Server accepted connection\n");
+    char msgid[MAX];
+    while(1){
+            // Function for chatting between client and server
+
+        memset(msgid, 0, MAX);
+
+        int size = read(connfd, msgid, sizeof(msgid));
+        if (size < 0) {
+            perror("read error");
+            exit(1);
+        }
+
+
+   msg_enum msgEnum = atoi(msgid);
+   char *strEnum = getMsgEnum(msgEnum);
+   printf("%s : %d\n", strEnum, msgEnum);
+   if(msgEnum == TERMINATE){
+       break;
+   }
+
+
+        if (write(connfd, msgid, strlen(msgid)) < 0) {
+            perror("write error");
+            exit(1);
+        }
+      
+    }
+    if (write(connfd, msgid, strlen(msgid)) < 0) {
+        perror("write error");
         exit(1);
     }
-
-    char recv[MAX];
-    memset(recv, 0, MAX);
-    if (read(sockfd, recv, MAX) < 0) {
-        perror("cannot read");
-        exit(1);
-    }
-
-    msg_enum msgEnum = atoi(recv);
-    char *strEnum = getMsgEnum(msgEnum);
-    printf("%s : %d\n", strEnum, msgEnum);
-    if(msgEnum == TERMINATE){
-        break;
-    }
-
-    i++;
-}
-    // close the socket
+    // Server never shut down
+    close(connfd);
     close(sockfd);
 
-    //msg_enum msg{};
-    //printf("%d\n", msg);
-        
+    // create empty output folder
+    //bookeepingCode();
+
+    // start a log thread, wait 5 seconds, and write a log to a file
+    //write_to_log_file();
+
+    // create a socket and begin listening on it
+
+    /*For each incoming connection, the server will create a worker thread 
+    which will handle the connection (pass it the connection’s file descriptor) */
+    //pass_to_worker(fileDesc);
+
+    //and return to listening on the socket.
 
     return 0; 
 }

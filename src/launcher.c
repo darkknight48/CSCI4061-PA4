@@ -37,6 +37,12 @@ int main(int argc, char *argv[]){
             printf("Failed to launch server.\n");
             exit(EXIT_FAILURE);
         }
+        // sleep to allow the registration messages to be delivered
+        // to prevent a race condition with the transactions
+        if (c == 4)
+        {
+            sleep(3);
+        }
         c++;
     }
 

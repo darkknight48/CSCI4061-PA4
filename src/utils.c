@@ -47,6 +47,6 @@ char* getMsgEnum(msg_enum msg)
        case HISTORY: return "HISTORY";
    }
 }
-
+//these were removed from the most recent release
 //void writeMessage(int, struct message){}
 //bool readMessage(int, struct message *){}
