@@ -27,14 +27,16 @@ void transact(int acc_num, float val)
 
     // send a GET_BALANCE message to the server to ensure
     // that the account will not go negative
-    if(amt = write(&connfd, &get_balance_msg, sizeof(msg_enum)) != sizeof(msg_enum)){
+    msg_enum net_get_balance = htonl(get_balance_msg);
+    if(amt = write(&connfd, &net_get_balance, sizeof(msg_enum)) != sizeof(msg_enum)){
         printf("transact failed to write GET_BALANCE\n.");
         printf("It wrote %d bytes\n.", amt);
         exit(1);
     }
 
     //sending the account number for GET_BALANCE
-    if(amt = write(&connfd, &acc_num, sizeof(int)) != sizeof(int)){
+    int net_acc_num = htonl(acc_num);
+    if(amt = write(&connfd, &net_acc_num, sizeof(int)) != sizeof(int)){
         printf("transact failed to write account number\n.");
         printf("It wrote %d bytes\n.", amt);
         exit(1);
@@ -50,8 +52,10 @@ void transact(int acc_num, float val)
         printf("It read %d bytes\n.", amt);
         exit(1);
     }
+    msg_enum net_response = ntohl(rsp_type);
+
     // handle us getting the wrong value back
-    else if(rsp_type != BALANCE)
+    if(net_response != BALANCE)
     {
         printf("transact recieved wrong rsp_type\n");
         exit(1);
@@ -63,6 +67,8 @@ void transact(int acc_num, float val)
         printf("It read %d bytes\n.", amt);
         exit(1);
     }
+    int net_account_num = ntohl(account_num);
+
     // get the balance
     if((amt=read(connfd, &balance, sizeof(float))) < 1)
     {
@@ -70,21 +76,24 @@ void transact(int acc_num, float val)
         printf("It read %d bytes\n.", amt);
         exit(1);
     }
+    float net_balance = ntohl(balance);
 
     //only request cash if there isn't enough in the account balance
     //only applicable for withdrawls
         //this is why val is negated, because a deposit will increase the balance
-    while(balance < (-val)){
+    while(net_balance < (-val)){
         // send REQUEST_CASH to server until the cash variable 
         // (include/client.h) will not go negative
-        if(amt = write(&connfd, &request_cash_msg, sizeof(msg_enum)) != sizeof(msg_enum)){
+        msg_enum net_request_cash_msg = htonl(request_cash_msg);
+        if(amt = write(&connfd, &net_request_cash_msg, sizeof(msg_enum)) != sizeof(msg_enum)){
             printf("transact failed to write REQUEST_CASH\n.");
             printf("It wrote %d bytes\n.", amt);
             exit(1);
         }
 
         //sending the amount for REQUEST_CASH
-        if(amt = write(&connfd, &val_requested, sizeof(float)) != sizeof(float)){
+        float net_val_requested = htonl(val_requested);
+        if(amt = write(&connfd, &net_val_requested, sizeof(float)) != sizeof(float)){
             printf("transact failed to write val\n.");
             printf("It wrote %d bytes\n.", amt);
             exit(1);
@@ -99,8 +108,10 @@ void transact(int acc_num, float val)
             printf("It read %d bytes\n.", amt);
             exit(1);
         }
+        net_response = ntohl(rsp_type);
+
         // handle us getting the wrong value back
-        else if(rsp_type != CASH)
+        if(net_response != CASH)
         {
             printf("transact recieved wrong rsp_type\n");
             exit(1);
@@ -112,38 +123,38 @@ void transact(int acc_num, float val)
             printf("It read %d bytes\n.", amt);
             exit(1);
         }
+        float net_cash = ntohl(cash);
 
-        balance += cash;
+        net_balance += net_cash;
     }
 
     // send TRANSACTION message to the server
-    if(amt = write(&connfd, &transact_msg, sizeof(msg_enum)) != sizeof(msg_enum)){
+    msg_enum net_transact_msg = htonl(transact_msg);
+    if(amt = write(&connfd, &net_transact_msg, sizeof(msg_enum)) != sizeof(msg_enum)){
         printf("transact failed to write TRANSACT\n.");
         printf("It wrote %d bytes\n.", amt);
         exit(1);
     }
 
-
-
     // add the value of the transaction to the cash
     // variable (deposites increase, withdrawls decrease)
 
     //sending the account number for TRANSACT
-    if(amt = write(&connfd, &acc_num, sizeof(int)) != sizeof(int)){
+    net_acc_num = htonl(acc_num);
+    if(amt = write(&connfd, &net_acc_num, sizeof(int)) != sizeof(int)){
         printf("transact failed to write account number\n.");
         printf("It wrote %d bytes\n.", amt);
         exit(1);
     }
 
     //sending the amount for TRANSACT
-    if(amt = write(&connfd, &val, sizeof(float)) != sizeof(float)){
+    float net_val = htonl(val);
+    if(amt = write(&connfd, &net_val, sizeof(float)) != sizeof(float)){
         printf("transact failed to write val\n.");
         printf("It wrote %d bytes\n.", amt);
         exit(1);
     }
-
-    
-
+ 
     // NOTE: make sure to use proper error handling
 }
 
