@@ -131,7 +131,7 @@ void account_info(int sock_fd, int accNum){
     // write the message type first
     if((amt=write(sock_fd, &msg, sizeof(msg_enum))) != sizeof(msg_enum))
     {
-        printf("get_account_info failed to write msg_type\n.");
+        printf("account_info failed to write msg_type\n.");
         printf("It wrote %d bytes\n.", amt);
         exit(1);
     }
@@ -140,21 +140,21 @@ void account_info(int sock_fd, int accNum){
     //write the name to client
     if((amt=write(sock_fd, &name, sizeof(char)*MAX_STR)) < 1)
     {
-        printf("get_account_info failed to write msg_type\n.");
+        printf("account_info failed to write name\n.");
         printf("It wrote %d bytes\n.", amt);
         exit(1);
     }
     //write the username to client
     if((amt=write(sock_fd, &username, sizeof(char)*MAX_STR)) < 1)
     {
-        printf("get_account_info failed to write msg_type\n.");
+        printf("account_info failed to write username\n.");
         printf("It wrote %d bytes\n.", amt);
         exit(1);
     }
     //write the birthday to client
     if((amt=write(sock_fd, &birthday, sizeof(time_t))) != sizeof(time_t))
     {
-        printf("get_account_info failed to write msg_type\n.");
+        printf("account_info failed to write birthday\n.");
         printf("It wrote %d bytes\n.", amt);
         exit(1);
     }
@@ -171,7 +171,7 @@ void cash(int sock_fd, int sentCash){
     // write the message type first
     if((amt=write(sock_fd, &msg, sizeof(msg_enum))) != sizeof(msg_enum))
     {
-        printf("get_account_info failed to write msg_type\n.");
+        printf("cash failed to write msg_type\n.");
         printf("It wrote %d bytes\n.", amt);
         exit(1);
     }
@@ -179,7 +179,7 @@ void cash(int sock_fd, int sentCash){
     //write the sent cash
     if((amt=write(sock_fd, &sentCash, sizeof(int))) != sizeof(int))
     {
-        printf("get_account_info failed to write msg_type\n.");
+        printf("cash failed to write sent cash\n.");
         printf("It wrote %d bytes\n.", amt);
         exit(1);
     }
@@ -195,7 +195,7 @@ void balance(int sock_fd, float balance){
     // write the message type first
     if((amt=write(sock_fd, &msg, sizeof(msg_enum))) != sizeof(msg_enum))
     {
-        printf("get_account_info failed to write msg_type\n.");
+        printf("balance failed to write msg_type\n.");
         printf("It wrote %d bytes\n.", amt);
         exit(1);
     }
@@ -203,7 +203,7 @@ void balance(int sock_fd, float balance){
     //write the sent cash
     if((amt=write(sock_fd, &balance, sizeof(float))) != sizeof(float))
     {
-        printf("get_account_info failed to write msg_type\n.");
+        printf("balance failed to write balance\n.");
         printf("It wrote %d bytes\n.", amt);
         exit(1);
     }
@@ -219,7 +219,7 @@ void messageError(int sock_fd){
     // write the message
     if((amt=write(sock_fd, &msg, sizeof(msg_enum))) != sizeof(msg_enum))
     {
-        printf("get_account_info failed to write msg_type\n.");
+        printf("messageError failed to write msg_type\n.");
         printf("It wrote %d bytes\n.", amt);
         exit(1);
     }
