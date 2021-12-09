@@ -59,13 +59,13 @@ int main(int argc, char *argv[]){
     len = sizeof(cli);
 
 
-        // TODO: complete the next line with accept()
-        connfd = accept(sockfd, (SA *) &cli, &len); // blocks if doesn't have a connection
-        if (connfd < 0) {
-            printf("Server accept failed...\n");
-            exit(0);
-        } 
-        //printf("Server accepted connection\n");
+    // TODO: complete the next line with accept()
+    connfd = accept(sockfd, (SA *) &cli, &len); // blocks if doesn't have a connection
+    if (connfd < 0) {
+        printf("Server accept failed...\n");
+        exit(0);
+    } 
+    //printf("Server accepted connection\n");
     char msgid[MAX];
     while(1){
             // Function for chatting between client and server
@@ -79,12 +79,12 @@ int main(int argc, char *argv[]){
         }
 
 
-   msg_enum msgEnum = atoi(msgid);
-   char *strEnum = getMsgEnum(msgEnum);
-   printf("%s : %d\n", strEnum, msgEnum);
-   if(msgEnum == TERMINATE){
-       break;
-   }
+        msg_enum msgEnum = atoi(msgid);
+        char *strEnum = getMsgEnum(msgEnum);
+        printf("%s : %d\n", strEnum, msgEnum);
+        if(msgEnum == TERMINATE){
+            break;
+        }
 
 
         if (write(connfd, msgid, strlen(msgid)) < 0) {
