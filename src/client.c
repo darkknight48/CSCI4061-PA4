@@ -6,13 +6,15 @@
 #define NCLIENTS 5
 #define SA struct sockaddr
 
+int connfd;
+
 // logic for handling TRANSACT
 void transact(int acc_num, float val)
 {
     // send a GET_BALANCE message to the server to ensure
     // that the account will not go negative
 
-    // send GET_CASH to server until the cash variable 
+    // send REQUEST_CASH to server until the cash variable 
     // (include/client.h) will not go negative
 
     // send TRANSACTION to the server
@@ -21,6 +23,92 @@ void transact(int acc_num, float val)
     // variable (deposites increase, withdrawls decrease)
 
     // NOTE: make sure to use proper error handling
+}
+
+void registrate(int acc_num, char *userName, char *name, time_t birthDay)
+{
+// integer to hold number of bytes read/written
+    int amt = 0;
+
+    // variables to write to the socket
+    msg_enum msg_type = REGISTER;
+
+    // variables to write the read response into
+    msg_enum rsp_type; // should be of type BALANCE
+    int servAccNum;
+    float balance;
+    
+    // using read and write aren't the best "real world" call
+    // but will be the simplest for you to use
+    //
+    // write the message type first
+    msg_enum networkMsg = htonl(msg_type);
+    if((amt=write(sock_fd, &networkMsg, sizeof(networkMsg))) != sizeof(networkMsg))
+    {
+        printf("registrate failed to write msg_type\n.");
+        printf("It wrote %d bytes\n.", amt);
+        exit(1);
+    }
+    //write the username to client
+    char netUsrNm[MAX_STR] = htonl(userName);
+    if((amt=write(sock_fd, &netUsrNm, sizeof(char)*MAX_STR)) < 1)
+    {
+        printf("registrate failed to write userName\n.");
+        printf("It wrote %d bytes\n.", amt);
+        exit(1);
+    }
+    //write the name to client
+    char netNm[MAX_STR] = htonl(name);
+    if((amt=write(sock_fd, &netNm, sizeof(char)*MAX_STR)) < 1)
+    {
+        printf("registrate failed to write name\n.");
+        printf("It wrote %d bytes\n.", amt);
+        exit(1);
+    }
+    //write the birthday to client
+    time_t netBirthday = htonl(birthDay);
+    if((amt=write(sock_fd, &birthDay, sizeof(time_t))) != sizeof(time_t))
+    {
+        printf("registrate failed to write birthDay\n.");
+        printf("It wrote %d bytes\n.", amt);
+        exit(1);
+    }
+    
+    // read in the response message type first
+    // as this tells us what fields we will need
+    // to read afterwards and their types
+    if((amt=read(sock_fd, &rsp_type, sizeof(msg_enum))) != sizeof(msg_enum))
+    {
+        printf("registrate failed to read rsp_type\n."); //should be BALANCE
+        printf("It read %d bytes\n.", amt);
+        exit(1);
+    }
+    msg_enum hostRsp = ntohl(rsp_type);
+
+    // handle us getting the wrong value back
+    else if(hostRsp != BALANCE)
+    {
+        printf("registrate recieved wrong rsp_type\n");
+        exit(1);
+    }
+    // get the account number
+    if((amt=read(sock_fd, &servAccNum, sizeof(int))) != sizeof(int))
+    {
+        printf("registrate failed to read servAccNum\n.");
+        printf("It read %d bytes\n.", amt);
+        exit(1);
+    }
+    int hostAcNum = ntohl(servAccNum);
+    // get the balance
+    if((amt=read(sock_fd, &balance, sizeof(float))) != sizeof(float))
+    {
+        printf("registrate failed to read balance\n.");
+        printf("It read %d bytes\n.", amt);
+        exit(1);
+    }
+    float hostBalance = ntohl(balance);
+
+
 }
 
 
@@ -111,7 +199,7 @@ int main(int argc, char *argv[]){
     }*/
 
 
-    int sockfd, connfd;
+    int sockfd;
     struct sockaddr_in servaddr, cli;
     // socket create and verification
     // TODO: complete next line (socket)
@@ -173,3 +261,18 @@ while(1){
     return 0; 
 }
 
+void messageError(int sock_fd){
+    //integer to hold bytes written and read
+    int amt = 0;
+
+    //variables to write
+    msg_enum msg = ERROR;
+
+    // write the message
+    if((amt=write(sock_fd, &msg, sizeof(msg_enum))) != sizeof(msg_enum))
+    {
+        printf("messageError failed to write msg_type\n.");
+        printf("It wrote %d bytes\n.", amt);
+        exit(1);
+    }
+}
