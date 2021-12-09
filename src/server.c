@@ -137,17 +137,17 @@ void account_info(int sock_fd, int accNum){
     }
 
     //write arguments for message type
-    //write the name to client
-    if((amt=write(sock_fd, &name, sizeof(char)*MAX_STR)) < 1)
-    {
-        printf("account_info failed to write name\n.");
-        printf("It wrote %d bytes\n.", amt);
-        exit(1);
-    }
     //write the username to client
     if((amt=write(sock_fd, &username, sizeof(char)*MAX_STR)) < 1)
     {
         printf("account_info failed to write username\n.");
+        printf("It wrote %d bytes\n.", amt);
+        exit(1);
+    }
+    //write the name to client
+    if((amt=write(sock_fd, &name, sizeof(char)*MAX_STR)) < 1)
+    {
+        printf("account_info failed to write name\n.");
         printf("It wrote %d bytes\n.", amt);
         exit(1);
     }
