@@ -209,7 +209,7 @@ void balance(int sock_fd, float balance){
     }
 }
 
-void messageError(sock_fd){
+void messageError(int sock_fd){
     //integer to hold bytes written and read
     int amt = 0;
 
