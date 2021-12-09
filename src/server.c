@@ -51,7 +51,7 @@ int main(int argc, char *argv[]){
     } 
 
     // TODO: fill out if-condition with listen()
-    if ((listen(sockfd, 1)) != 0) {
+    if((listen(sockfd, 1)) != 0) {
         printf("Listen failed...\n");
         exit(0);
     } else

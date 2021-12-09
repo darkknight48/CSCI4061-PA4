@@ -1,4 +1,5 @@
 #include "server.h"
+#include "time.h"
 
 #define LOCALHOST "127.0.0.1"
 #define MAX 516
@@ -27,6 +28,9 @@ int main(int argc, char *argv[]){
         printSyntax();
         return 0;
     }*/
+    time_t t = time(NULL);
+    struct tm tm = *localtime(&t);
+    printf("now: %d-%02d-%02d %02d:%02d:%02d\n", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
     
     int sockfd, connfd, len;
     struct sockaddr_in servaddr, cli;
@@ -49,15 +53,7 @@ int main(int argc, char *argv[]){
         printf("Socket bind failed...\n");
         exit(0);
     } 
-
-    // TODO: fill out if-condition with listen()
-    if ((listen(sockfd, 1)) != 0) {
-        printf("Listen failed...\n");
-        exit(0);
-    } else
-        //printf("Listening...\n");
     len = sizeof(cli);
-
 
     // TODO: complete the next line with accept()
     connfd = accept(sockfd, (SA *) &cli, &len); // blocks if doesn't have a connection
