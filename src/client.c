@@ -8,6 +8,48 @@
 
 int connfd;
 
+void getBalance(int acc_num){
+    // integer to hold number of bytes read/written
+    int amt = 0;
+
+    msg_enum get_balance_msg = GET_BALANCE;
+    msg_enum net_get_balance = htonl(get_balance_msg);
+    if(amt = write(&connfd, &net_get_balance, sizeof(msg_enum)) != sizeof(msg_enum)){
+        printf("transact failed to write GET_BALANCE\n.");
+        printf("It wrote %d bytes\n.", amt);
+        exit(1);
+    }
+
+    //sending the account number for GET_BALANCE
+    int net_acc_num = htonl(acc_num);
+    if(amt = write(&connfd, &net_acc_num, sizeof(int)) != sizeof(int)){
+        printf("transact failed to write account number\n.");
+        printf("It wrote %d bytes\n.", amt);
+        exit(1);
+    }
+}
+
+void requestCash(float val_requested){
+    // integer to hold number of bytes read/written
+    int amt = 0;
+
+    msg_enum request_cash_msg = REQUEST_CASH;
+
+    msg_enum net_request_cash_msg = htonl(request_cash_msg);
+    if(amt = write(&connfd, &net_request_cash_msg, sizeof(msg_enum)) != sizeof(msg_enum)){
+        printf("transact failed to write REQUEST_CASH\n.");
+        printf("It wrote %d bytes\n.", amt);
+        exit(1);
+    }
+    //sending the amount for REQUEST_CASH
+    float net_val_requested = htonl(val_requested);
+    if(amt = write(&connfd, &net_val_requested, sizeof(float)) != sizeof(float)){
+        printf("transact failed to write val\n.");
+        printf("It wrote %d bytes\n.", amt);
+        exit(1);
+    }
+}
+
 // logic for handling TRANSACT
 void transact(int acc_num, float val)
 {
