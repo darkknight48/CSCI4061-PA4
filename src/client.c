@@ -189,3 +189,18 @@ void messageError(int sock_fd){
     }
 }
 
+void terminate(int sock_fd){
+    //integer to hold bytes written and read
+    int amt = 0;
+
+    //variables to write
+    msg_enum msg = TERMINATE;
+
+    // write the message
+    if((amt=write(sock_fd, &msg, sizeof(msg_enum))) != sizeof(msg_enum))
+    {
+        printf("messageError failed to write msg_type\n.");
+        printf("It wrote %d bytes\n.", amt);
+        exit(1);
+    }
+}
