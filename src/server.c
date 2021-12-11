@@ -1,17 +1,40 @@
 #include "server.h"
 
-#define LOCALHOST "127.0.0.1"
+//#define LOCALHOST "127.0.0.1"
 #define MAX 516
-#define PORT 9333
+//#define PORT 9333
 #define NCLIENTS 5
 #define SA struct sockaddr
 
-void printSyntax(){
-    printf("incorrect usage syntax! \n");
-    printf("usage: $ ./server server_addr server_port num_workers\n");
-}
 
-//void write_to_log_file(){}
+void write_to_log_file(){
+    //iterate over every account in balances[] to log account info to balances.csv
+    //format: account number,balance,name,username,birthday  (”%d,%.2f,%s,%s,%ld\n”)
+    
+    char *balancesFile = "output/balances.csv";
+    FILE *fp = fopen(balancesFile, "w");   //write to finalDir
+
+    if(fp == NULL){
+        printf("ERROR: failed to create %s\n", balancesFile);
+        exit(EXIT_FAILURE);
+    }
+
+    for(int i = 0; i < MAX_ACC; i++){
+        char temp[1024];
+
+        //lock
+        pthread_mutex_lock(&balances[i].lock);
+
+        sprintf(temp, ”%d,%.2f,%s,%s,%ld\n”, i, balances[i].balance, balances[i].name, balances[i].username, balances[i].birthday);
+        
+        //unlock
+        pthread_mutex_unlock(&balances[i].lock);
+        
+        fputs(temp, fp);
+    }
+
+    fclose(fp);
+}
 
 /*A worker thread will parse each query 
     received and reply with the appropriate response. If it modifies the global balance 
@@ -20,13 +43,22 @@ void printSyntax(){
     connection and return.*/
 //void pass_to_worker(){}
 
+void printSyntax(){
+    printf("incorrect usage syntax! \n");
+    printf("usage: $ ./server server_addr server_port num_workers\n");
+}
+
 int main(int argc, char *argv[]){
     // argument handling
-    /*if(argc != 4)    commented out for interim submission
+    if(argc != 4)
     {
         printSyntax();
         return 0;
-    }*/
+    }
+
+    char *serv_addr = argv[1];
+    int PORT = atoi(argv[2]);
+    int numWorkers = atoi(argv[3]);
     
     int sockfd, connfd, len;
     struct sockaddr_in servaddr, cli;
@@ -51,7 +83,7 @@ int main(int argc, char *argv[]){
     } 
 
     // TODO: fill out if-condition with listen()
-    if((listen(sockfd, 1)) != 0) {
+    if ((listen(sockfd, 1)) != 0) {
         printf("Listen failed...\n");
         exit(0);
     } else
@@ -59,16 +91,16 @@ int main(int argc, char *argv[]){
     len = sizeof(cli);
 
 
-    // TODO: complete the next line with accept()
-    connfd = accept(sockfd, (SA *) &cli, &len); // blocks if doesn't have a connection
-    if (connfd < 0) {
-        printf("Server accept failed...\n");
-        exit(0);
-    } 
-    //printf("Server accepted connection\n");
+        // TODO: complete the next line with accept()
+        connfd = accept(sockfd, (SA *) &cli, &len); // blocks if doesn't have a connection
+        if (connfd < 0) {
+            printf("Server accept failed...\n");
+            exit(0);
+        } 
+        //printf("Server accepted connection\n");
     char msgid[MAX];
     while(1){
-        // Function for chatting between client and server
+            // Function for chatting between client and server
 
         memset(msgid, 0, MAX);
 
@@ -79,12 +111,12 @@ int main(int argc, char *argv[]){
         }
 
 
-        msg_enum msgEnum = atoi(msgid);
-        char *strEnum = getMsgEnum(msgEnum);
-        printf("%s : %d\n", strEnum, msgEnum);
-        if(msgEnum == TERMINATE){
-            break;
-        }
+   msg_enum msgEnum = atoi(msgid);
+   char *strEnum = getMsgEnum(msgEnum);
+   printf("%s : %d\n", strEnum, msgEnum);
+   if(msgEnum == TERMINATE){
+       break;
+   }
 
 
         if (write(connfd, msgid, strlen(msgid)) < 0) {
@@ -116,4 +148,112 @@ int main(int argc, char *argv[]){
     //and return to listening on the socket.
 
     return 0; 
+}
+
+void account_info(int sock_fd, int accNum){
+    //integer to hold bytes written and read
+    int amt = 0;
+
+    //variables to write
+    msg_enum msg = ACCOUNT_INFO;
+    char name[MAX_STR] = balances[accNum].name;
+    char username[MAX_STR] = balances[accNum].username;
+    time_t birthday = balances[accNum].birthday;
+
+    // write the message type first
+    if((amt=write(sock_fd, htonl(&msg), sizeof(msg_enum))) != sizeof(msg_enum))
+    {
+        printf("account_info failed to write msg_type\n.");
+        printf("It wrote %d bytes\n.", amt);
+        exit(1);
+    }
+
+    //write arguments for message type
+    //write the username to client
+    htonl(&username);
+    if((amt=write(sock_fd, htonl(&username), sizeof(char)*MAX_STR)) < 1)
+    {
+        printf("account_info failed to write username\n.");
+        printf("It wrote %d bytes\n.", amt);
+        exit(1);
+    }
+    //write the name to client
+    if((amt=write(sock_fd, htonl(&name), sizeof(char)*MAX_STR)) < 1)
+    {
+        printf("account_info failed to write name\n.");
+        printf("It wrote %d bytes\n.", amt);
+        exit(1);
+    }
+    //write the birthday to client
+    if((amt=write(sock_fd, htonl(&birthday), sizeof(time_t))) != sizeof(time_t))
+    {
+        printf("account_info failed to write birthday\n.");
+        printf("It wrote %d bytes\n.", amt);
+        exit(1);
+    }
+}
+
+
+void cash(int sock_fd, int sentCash){
+    //integer to hold bytes written and read
+    int amt = 0;
+
+    //variables to write
+    msg_enum msg = CASH;
+
+    // write the message type first
+    if((amt=write(sock_fd, htonl(&msg), sizeof(msg_enum))) != sizeof(msg_enum))
+    {
+        printf("cash failed to write msg_type\n.");
+        printf("It wrote %d bytes\n.", amt);
+        exit(1);
+    }
+    
+    //write the sent cash
+    if((amt=write(sock_fd, htonl(&sentCash), sizeof(int))) != sizeof(int))
+    {
+        printf("cash failed to write sent cash\n.");
+        printf("It wrote %d bytes\n.", amt);
+        exit(1);
+    }
+}
+
+void balance(int sock_fd, float balance){
+    //integer to hold bytes written and read
+    int amt = 0;
+
+    //variables to write
+    msg_enum msg = BALANCE;
+
+    // write the message type first
+    if((amt=write(sock_fd, htonl(&msg), sizeof(msg_enum))) != sizeof(msg_enum))
+    {
+        printf("balance failed to write msg_type\n.");
+        printf("It wrote %d bytes\n.", amt);
+        exit(1);
+    }
+
+    //write the balance
+    if((amt=write(sock_fd, htonl(&balance), sizeof(float))) != sizeof(float))
+    {
+        printf("balance failed to write balance\n.");
+        printf("It wrote %d bytes\n.", amt);
+        exit(1);
+    }
+}
+
+void messageError(int sock_fd){
+    //integer to hold bytes written and read
+    int amt = 0;
+
+    //variables to write
+    msg_enum msg = ERROR;
+
+    // write the message
+    if((amt=write(sock_fd, htonl(&msg), sizeof(msg_enum))) != sizeof(msg_enum))
+    {
+        printf("messageError failed to write msg_type\n.");
+        printf("It wrote %d bytes\n.", amt);
+        exit(1);
+    }
 }
