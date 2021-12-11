@@ -394,7 +394,9 @@ int main(int argc, char *argv[]){
         printSyntax();
         return 0;
     }
-    char* inputFilename = argv[1];
+    char* inFilename = argv[1];
+    char* inputFilename;
+    sprintf(inputFilename, "input/%s", inFilename);
     char* serv_addr = argv[2];
     int PORT = atoi(argv[3]);
     

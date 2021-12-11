@@ -1,7 +1,7 @@
 #include "server.h"
 
 //#define LOCALHOST "127.0.0.1"
-#define MAX 516
+//#define MAX 516
 //#define PORT 9333
 #define SA struct sockaddr
 
@@ -126,10 +126,10 @@ void messageError(int sock_fd, msg_enum wrongMsg){ // this function is never cal
     }
 }
 
-void write_to_log_file(){
+void* write_to_log_file(){
     //iterate over every account in balances[] to log account info to balances.csv
     //format: account number,balance,name,username,birthday  (”%d,%.2f,%s,%s,%ld\n”)
-    
+    sleep(5);
     char *balancesFile = "output/balances.csv";
     FILE *fp = fopen(balancesFile, "w");   //write to finalDir
 
@@ -137,8 +137,8 @@ void write_to_log_file(){
         printf("ERROR: failed to create %s\n", balancesFile);
         exit(EXIT_FAILURE);
     }
-
-    for(int i = 0; i < MAX_ACC; i++){
+    int i = 0;
+    while(balances[i].name != "unused"){
         char temp[1024];
 
         //lock
@@ -201,7 +201,7 @@ void* worker_thread(void* arg)
                     exit(1);
                 }
                 int i = 0;
-                while(balances[i].name != NULL){
+                while(balances[i].name != "unused"){
                     i++;
                 }
                 pthread_mutex_init(&balances[i].lock, NULL);
@@ -313,9 +313,12 @@ int main(int argc, char *argv[]){
 
     // create empty output folder
     bookeepingCode();
-
+    for(int i = 0; i < 1023; i++){
+        strcpy(balances[i].name, "unused");
+    }
+    pthread_t tid;
     // start a log thread, wait 5 seconds, and write a log to a file
-    //write_to_log_file();
+    pthread_create(&tid, NULL, write_to_log_file, NULL);
 
 
     char *serv_addr = argv[1];
@@ -357,7 +360,7 @@ int main(int argc, char *argv[]){
     /*For each incoming connection, the server will create a worker thread 
     which will handle the connection (pass it the connection’s file descriptor) 
     and return to listening on the socket. */
-    pthread_t tid;
+    
     while(1){
             // Function for chatting between client and server
         connfd = accept(sockfd, (SA *) &cli, &len); // blocks if doesn't have a connection
