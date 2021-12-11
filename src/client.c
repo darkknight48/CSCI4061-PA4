@@ -178,7 +178,7 @@ void transact(int acc_num, float val)
     // NOTE: make sure to use proper error handling
 }
 
-void registrate(int acc_num, char *userName, char *name, time_t birthDay)
+void registrate(int sock_fd, int acc_num, char *userName, char *name, time_t birthDay)
 {
 // integer to hold number of bytes read/written
     int amt = 0;
@@ -389,7 +389,7 @@ int main(int argc, char *argv[]){
     
     time_t t = time(NULL);
     
-    int sockfd;
+    int sockfd, amt;
     struct sockaddr_in servaddr, cli;
     // socket create and verification
     // TODO: complete next line (socket)
@@ -450,7 +450,7 @@ int main(int argc, char *argv[]){
         time_t temp = (time_t)birthDay;
         switch (input_msg_type){
             case REGISTER :
-                registrate(acc_num, &usrName, &name, temp);
+                registrate(sockfd, acc_num, &usrName, &name, temp);
             case GET_ACCOUNT_INFO :
                 get_account_info(sockfd);
             case TRANSACT :
