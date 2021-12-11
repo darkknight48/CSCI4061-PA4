@@ -44,40 +44,40 @@ void requestCash(float val_requested){
         exit(1);
     }
     //sending the amount for REQUEST_CASH
-    float net_val_requested = htonl(val_requested);
-    if(amt = write(&connfd, &net_val_requested, sizeof(float)) != sizeof(float)){
+    //float net_val_requested = htonl(val_requested);
+    if(amt = write(&connfd, &val_requested, sizeof(float)) != sizeof(float)){
         printf("transact failed to write val\n.");
         printf("It wrote %d bytes\n.", amt);
         exit(1);
     }
 
     // read in the response message type first (should be CASH)
-        // as this tells us what fields we will need
-        // to read afterwards and their types
-        if((amt=read(connfd, &rsp_type, sizeof(msg_enum))) != sizeof(msg_enum))
-        {
-            printf("transact failed to read rsp_type\n.");
-            printf("It read %d bytes\n.", amt);
-            exit(1);
-        }
-        net_response = ntohl(rsp_type);
+    // as this tells us what fields we will need
+    // to read afterwards and their types
+    if((amt=read(connfd, &rsp_type, sizeof(msg_enum))) != sizeof(msg_enum))
+    {
+        printf("transact failed to read rsp_type\n.");
+        printf("It read %d bytes\n.", amt);
+        exit(1);
+    }
+    net_response = ntohl(rsp_type);
 
-        // handle us getting the wrong value back
-        if(net_response != CASH)
-        {
-            printf("transact recieved wrong rsp_type\n");
-            exit(1);
-        }
-        // get the cash amount
-        if((amt=read(connfd, &wired_cash, sizeof(float))) < 1)
-        {
-            printf("transact failed to read cash amountr\n.");
-            printf("It read %d bytes\n.", amt);
-            exit(1);
-        }
-        float net_cash = ntohl(wired_cash);
+    // handle us getting the wrong value back
+    if(net_response != CASH)
+    {
+        printf("transact recieved wrong rsp_type\n");
+        exit(1);
+    }
+    // get the cash amount
+    if((amt=read(connfd, &wired_cash, sizeof(float))) < 1)
+    {
+        printf("transact failed to read cash amountr\n.");
+        printf("It read %d bytes\n.", amt);
+        exit(1);
+    }
+    //float net_cash = ntohl(wired_cash);
 
-        cash += net_cash;
+    cash += wired_cash;
 }
 
 // logic for handling TRANSACT
@@ -135,8 +135,8 @@ void transact(int acc_num, float val)
         printf("It read %d bytes\n.", amt);
         exit(1);
     }
-    float net_balance = ntohl(balance);
-    if(net_balance < (-val)){ // if the account doesn't have enough money for the desired withdrawl, ignore
+    //float net_balance = ntohl(balance);
+    if(balance < (-val)){ // if the account doesn't have enough money for the desired withdrawl, ignore
         exit(0);
     }
     //only request cash if there isn't enough in the local bank (this client thread)
@@ -168,8 +168,8 @@ void transact(int acc_num, float val)
     }
 
     //sending the amount for TRANSACT
-    float net_val = htonl(val);
-    if(amt = write(&connfd, &net_val, sizeof(float)) != sizeof(float)){
+    //float net_val = htonl(val);
+    if(amt = write(&connfd, &val, sizeof(float)) != sizeof(float)){
         printf("transact failed to write val\n.");
         printf("It wrote %d bytes\n.", amt);
         exit(1);
@@ -203,23 +203,23 @@ void registrate(int sock_fd, int acc_num, char *userName, char *name, time_t bir
         exit(1);
     }
     //write the username to client
-    char netUsrNm[MAX_STR] = htonl(userName);
-    if((amt=write(sock_fd, &netUsrNm, sizeof(char)*MAX_STR)) < 1)
+    //char netUsrNm[MAX_STR] = htonl(userName);
+    if((amt=write(sock_fd, &userName, sizeof(char)*MAX_STR)) < 1)
     {
         printf("registrate failed to write userName\n.");
         printf("It wrote %d bytes\n.", amt);
         exit(1);
     }
     //write the name to client
-    char netNm[MAX_STR] = htonl(name);
-    if((amt=write(sock_fd, &netNm, sizeof(char)*MAX_STR)) < 1)
+    //char netNm[MAX_STR] = htonl(name);
+    if((amt=write(sock_fd, &name, sizeof(char)*MAX_STR)) < 1)
     {
         printf("registrate failed to write name\n.");
         printf("It wrote %d bytes\n.", amt);
         exit(1);
     }
     //write the birthday to client
-    time_t netBirthday = htonl(birthDay);
+    //time_t netBirthday = htonl(birthDay);
     if((amt=write(sock_fd, &birthDay, sizeof(time_t))) != sizeof(time_t))
     {
         printf("registrate failed to write birthDay\n.");
@@ -259,7 +259,7 @@ void registrate(int sock_fd, int acc_num, char *userName, char *name, time_t bir
         printf("It read %d bytes\n.", amt);
         exit(1);
     }
-    float hostBalance = ntohl(balance);
+    //float hostBalance = ntohl(balance);
 
 
 }
@@ -286,14 +286,16 @@ void get_account_info(int sock_fd)
     // but will be the simplest for you to use
     //
     // write the message type first
-    if((amt=write(sock_fd, &msg_type, sizeof(msg_enum))) != sizeof(msg_enum))
+    msg_enum networkMsg = htonl(msg_type);
+    if((amt=write(sock_fd, &networkMsg, sizeof(msg_enum))) != sizeof(msg_enum))
     {
         printf("get_account_info failed to write msg_type\n.");
         printf("It wrote %d bytes\n.", amt);
         exit(1);
     }
     // write the arguments for the message type
-    if((amt=write(sock_fd, &acc_num, sizeof(int))) != sizeof(int))
+    int net_acc_num = htonl(acc_num);
+    if((amt=write(sock_fd, &net_acc_num, sizeof(int))) != sizeof(int))
     {
         printf("get_account_info failed to write acc_num\n.");
         printf("It wrote %d bytes\n.", amt);
@@ -465,7 +467,7 @@ int main(int argc, char *argv[]){
                 float balance;
                 if((amt=read(connfd, &rsp_type, sizeof(msg_enum))) != sizeof(msg_enum))
                 {
-                    printf("getBalance failed to read rsp_type\n.");
+                    printf("transact failed to read rsp_type\n.");
                     printf("It read %d bytes\n.", amt);
                     exit(1);
                 }
@@ -474,13 +476,13 @@ int main(int argc, char *argv[]){
                 // handle us getting the wrong value back
                 if(net_response != BALANCE)
                 {
-                    printf("getBalance recieved wrong rsp_type\n");
+                    printf("transact recieved wrong rsp_type\n");
                     exit(1);
                 }
                 // get the account number
                 if((amt=read(connfd, &account_num, sizeof(int))) < 1)
                 {
-                    printf("getBalance failed to read account number\n.");
+                    printf("transact failed to read account number\n.");
                     printf("It read %d bytes\n.", amt);
                     exit(1);
                 }
@@ -493,7 +495,7 @@ int main(int argc, char *argv[]){
                     printf("It read %d bytes\n.", amt);
                     exit(1);
                 }
-                float net_balance = ntohl(balance);
+                //float net_balance = ntohl(balance);
             case REQUEST_CASH :
                 request_cash(transact_amt);
             case ERROR :

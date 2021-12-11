@@ -91,27 +91,7 @@ void worker_thread(void* arg)
                 balances[i].balance = 0;
                 pthread_mutex_unlock(&balances[i].lock);
                 float retBalance = 0;
-                msg_enum rsp_type = BALANCE;
-                if((amt=write(connfd, &rsp_type, sizeof(msg_enum))) != sizeof(msg_enum))
-                {
-                    printf("worker failed to write rsp_type\n.");
-                    printf("It read %d bytes\n.", amt);
-                    exit(1);
-                }
-                // sends account number
-                if((amt=write(connfd, &i, sizeof(int))) != sizeof(int))
-                {
-                    printf("worker failed to write accout number\n.");
-                    printf("It read %d bytes\n.", amt);
-                    exit(1);
-                }
-                // sends balance
-                if((amt=write(connfd, &retBalance, sizeof(float))) != sizeof(float))
-                {
-                    printf("worker failed to write balance\n.");
-                    printf("It read %d bytes\n.", amt);
-                    exit(1);
-                }
+                balance(connfd, retBalance);
             case GET_ACCOUNT_INFO :
                 int acc_num;
                 // reads account number
@@ -121,41 +101,7 @@ void worker_thread(void* arg)
                     printf("It read %d bytes\n.", amt);
                     exit(1);
                 }
-
-                char username[MAX_STR] = balances[i].username;
-                char name[MAX_STR] = balances[i].name;
-                time_t birthday = balances[i].birthday;
-                msg_enum rsp_type = ACCOUNT_INFO;
-                if((amt=write(connfd, &rsp_type, sizeof(msg_enum))) != sizeof(msg_enum))
-                {
-                    printf("worker failed to write rsp_type\n.");
-                    printf("It read %d bytes\n.", amt);
-                    exit(1);
-                }
-                
-                //write the username to client
-                if((amt=read(connfd, &username, sizeof(char)*MAX_STR)) < 1)
-                {
-                    printf("worker failed to read username\n.");
-                    printf("It wrote %d bytes\n.", amt);
-                    exit(1);
-                }
-                //write the name to client
-                //char netNm[MAX_STR] = htonl(name);
-                if((amt=read(connfd, &name, sizeof(char)*MAX_STR)) < 1)
-                {
-                    printf("worker failed to read name\n.");
-                    printf("It wrote %d bytes\n.", amt);
-                    exit(1);
-                }
-                //write the birthday to client
-                //time_t netBirthday = htonl(birthDay);
-                if((amt=read(connfd, &birthday, sizeof(time_t))) != sizeof(time_t))
-                {
-                    printf("worker failed to read birthday\n.");
-                    printf("It wrote %d bytes\n.", amt);
-                    exit(1);
-                }
+                account_info(connfd, acc_num);
             case TRANSACT :
                 transact(acc_num, transact_amt);
                 int acc_num;
@@ -180,27 +126,7 @@ void worker_thread(void* arg)
                     float retBalance = balances[acc_num].balance;
                     pthread_mutex_unlock(&balances[acc_num].lock);
 
-                    msg_enum rsp_type = BALANCE;
-                    if((amt=write(connfd, &rsp_type, sizeof(msg_enum))) != sizeof(msg_enum))
-                    {
-                        printf("worker failed to write rsp_type\n.");
-                        printf("It read %d bytes\n.", amt);
-                        exit(1);
-                    }
-                    // sends account number
-                    if((amt=write(connfd, &acc_num, sizeof(int))) != sizeof(int))
-                    {
-                        printf("worker failed to write accout number\n.");
-                        printf("It read %d bytes\n.", amt);
-                        exit(1);
-                    }
-                    // sends balance
-                    if((amt=write(connfd, &retBalance, sizeof(float))) != sizeof(float))
-                    {
-                        printf("worker failed to write balance\n.");
-                        printf("It read %d bytes\n.", amt);
-                        exit(1);
-                    }
+                    balance(connfd, retBalance);
                 }
             case GET_BALANCE :
                 int acc_num;
@@ -216,28 +142,8 @@ void worker_thread(void* arg)
                 float retBalance = balances[acc_num].balance;
                 pthread_mutex_unlock(&balances[acc_num].lock);
 
-                msg_enum rsp_type = BALANCE;
-                if((amt=write(connfd, &rsp_type, sizeof(msg_enum))) != sizeof(msg_enum))
-                {
-                    printf("worker failed to write rsp_type\n.");
-                    printf("It read %d bytes\n.", amt);
-                    exit(1);
-                }
-                // sends account number
-                if((amt=write(connfd, &acc_num, sizeof(int))) != sizeof(int))
-                {
-                    printf("worker failed to write accout number\n.");
-                    printf("It read %d bytes\n.", amt);
-                    exit(1);
-                }
-                // sends balance
-                if((amt=write(connfd, &retBalance, sizeof(float))) != sizeof(float))
-                {
-                    printf("worker failed to write balance\n.");
-                    printf("It read %d bytes\n.", amt);
-                    exit(1);
-                }
-             case REQUEST_CASH :
+                balance(connfd, retBalance);
+            case REQUEST_CASH :
 
                 float amount;
 
@@ -248,24 +154,9 @@ void worker_thread(void* arg)
                     printf("It read %d bytes\n.", amt);
                     exit(1);
                 }
-                float net_amount = ntohl(amount);   //amount to be sent back to client
+                //float net_amount = ntohl(amount);   //amount to be sent back to client
 
-                msg_enum get_cash_msg = CASH;
-                msg_enum net_get_cash = htonl(get_cash_msg);
-                if(amt = write(&connfd, &net_get_cash, sizeof(msg_enum)) != sizeof(msg_enum)){
-                    printf("worker failed to write CASH\n.");
-                    printf("It wrote %d bytes\n.", amt);
-                    exit(1);
-                }
-
-                //sending the amount for CASH
-                float net_val_requested = htonl(net_amount);
-                if(amt = write(&connfd, &net_val_requested, sizeof(float)) != sizeof(float)){
-                    printf("worker failed to write val_requested\n.");
-                    printf("It wrote %d bytes\n.", amt);
-                    exit(1);
-                }
-
+                cash(connfd, amount);
             case ERROR :
                 
                 int message_type;
@@ -373,12 +264,15 @@ void account_info(int sock_fd, int accNum){
 
     //variables to write
     msg_enum msg = ACCOUNT_INFO;
+    pthread_mutex_lock(&balances[accNum].lock);
     char name[MAX_STR] = balances[accNum].name;
     char username[MAX_STR] = balances[accNum].username;
     time_t birthday = balances[accNum].birthday;
+    pthread_mutex_unlock(&balances[accNum].lock);
 
     // write the message type first
-    if((amt=write(sock_fd, htonl(&msg), sizeof(msg_enum))) != sizeof(msg_enum))
+    msg_enum net_msg = htonl(msg);
+    if((amt=write(sock_fd, &net_msg, sizeof(msg_enum))) != sizeof(msg_enum))
     {
         printf("account_info failed to write msg_type\n.");
         printf("It wrote %d bytes\n.", amt);
@@ -387,22 +281,22 @@ void account_info(int sock_fd, int accNum){
 
     //write arguments for message type
     //write the username to client
-    htonl(&username);
-    if((amt=write(sock_fd, htonl(&username), sizeof(char)*MAX_STR)) < 1)
+    //htonl(&username);
+    if((amt=write(sock_fd, &username, sizeof(char)*MAX_STR)) < 1)
     {
         printf("account_info failed to write username\n.");
         printf("It wrote %d bytes\n.", amt);
         exit(1);
     }
     //write the name to client
-    if((amt=write(sock_fd, htonl(&name), sizeof(char)*MAX_STR)) < 1)
+    if((amt=write(sock_fd, &name, sizeof(char)*MAX_STR)) < 1)
     {
         printf("account_info failed to write name\n.");
         printf("It wrote %d bytes\n.", amt);
         exit(1);
     }
     //write the birthday to client
-    if((amt=write(sock_fd, htonl(&birthday), sizeof(time_t))) != sizeof(time_t))
+    if((amt=write(sock_fd, &birthday, sizeof(time_t))) != sizeof(time_t))
     {
         printf("account_info failed to write birthday\n.");
         printf("It wrote %d bytes\n.", amt);
@@ -411,7 +305,7 @@ void account_info(int sock_fd, int accNum){
 }
 
 
-void cash(int sock_fd, int sentCash){
+void cash(int sock_fd, float sentCash){
     //integer to hold bytes written and read
     int amt = 0;
 
@@ -419,7 +313,8 @@ void cash(int sock_fd, int sentCash){
     msg_enum msg = CASH;
 
     // write the message type first
-    if((amt=write(sock_fd, htonl(&msg), sizeof(msg_enum))) != sizeof(msg_enum))
+    msg_enum net_msg = htonl(msg);
+    if((amt=write(sock_fd, &net_msg, sizeof(msg_enum))) != sizeof(msg_enum))
     {
         printf("cash failed to write msg_type\n.");
         printf("It wrote %d bytes\n.", amt);
@@ -427,7 +322,7 @@ void cash(int sock_fd, int sentCash){
     }
     
     //write the sent cash
-    if((amt=write(sock_fd, htonl(&sentCash), sizeof(int))) != sizeof(int))
+    if((amt=write(sock_fd, &sentCash, sizeof(float))) != sizeof(float))
     {
         printf("cash failed to write sent cash\n.");
         printf("It wrote %d bytes\n.", amt);
@@ -443,7 +338,8 @@ void balance(int sock_fd, float balance){
     msg_enum msg = BALANCE;
 
     // write the message type first
-    if((amt=write(sock_fd, htonl(&msg), sizeof(msg_enum))) != sizeof(msg_enum))
+    msg_enum net_msg = htonl(msg);
+    if((amt=write(sock_fd, &net_msg, sizeof(msg_enum))) != sizeof(msg_enum))
     {
         printf("balance failed to write msg_type\n.");
         printf("It wrote %d bytes\n.", amt);
@@ -451,7 +347,7 @@ void balance(int sock_fd, float balance){
     }
 
     //write the balance
-    if((amt=write(sock_fd, htonl(&balance), sizeof(float))) != sizeof(float))
+    if((amt=write(sock_fd, &balance, sizeof(float))) != sizeof(float))
     {
         printf("balance failed to write balance\n.");
         printf("It wrote %d bytes\n.", amt);
@@ -467,7 +363,8 @@ void messageError(int sock_fd){
     msg_enum msg = ERROR;
 
     // write the message
-    if((amt=write(sock_fd, htonl(&msg), sizeof(msg_enum))) != sizeof(msg_enum))
+    msg_enum net_msg = htonl(msg);
+    if((amt=write(sock_fd, &net_msg, sizeof(msg_enum))) != sizeof(msg_enum))
     {
         printf("messageError failed to write msg_type\n.");
         printf("It wrote %d bytes\n.", amt);
