@@ -237,10 +237,49 @@ void worker_thread(void* arg)
                     printf("It read %d bytes\n.", amt);
                     exit(1);
                 }
-            case REQUEST_CASH :
-                request_cash(transact_amt);
+             case REQUEST_CASH :
+
+                float amount;
+
+                // get the cash amount
+                if((amt=read(connfd, &amount, sizeof(float))) < 1)
+                {
+                    printf("worker failed to read cash amount\n.");
+                    printf("It read %d bytes\n.", amt);
+                    exit(1);
+                }
+                float net_amount = ntohl(amount);   //amount to be sent back to client
+
+                msg_enum get_cash_msg = CASH;
+                msg_enum net_get_cash = htonl(get_cash_msg);
+                if(amt = write(&connfd, &net_get_cash, sizeof(msg_enum)) != sizeof(msg_enum)){
+                    printf("worker failed to write CASH\n.");
+                    printf("It wrote %d bytes\n.", amt);
+                    exit(1);
+                }
+
+                //sending the amount for CASH
+                float net_val_requested = htonl(net_amount);
+                if(amt = write(&connfd, &net_val_requested, sizeof(float)) != sizeof(float)){
+                    printf("worker failed to write val_requested\n.");
+                    printf("It wrote %d bytes\n.", amt);
+                    exit(1);
+                }
+
             case ERROR :
-                messageError(sockfd);
+                
+                int message_type;
+
+                if((amt=read(connfd, &message_type, sizeof(int))) < 1)
+                {
+                    printf("worker failed to read message type\n.");
+                    printf("It read %d bytes\n.", amt);
+                    exit(1);
+                }
+                int message = ntohl(message_type);
+
+                printf("No enumerated message for number: %d\n", message);
+
             case TERMINATE :
                 close(connfd);
                 break;

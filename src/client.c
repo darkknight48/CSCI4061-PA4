@@ -465,7 +465,7 @@ int main(int argc, char *argv[]){
                 float balance;
                 if((amt=read(connfd, &rsp_type, sizeof(msg_enum))) != sizeof(msg_enum))
                 {
-                    printf("transact failed to read rsp_type\n.");
+                    printf("getBalance failed to read rsp_type\n.");
                     printf("It read %d bytes\n.", amt);
                     exit(1);
                 }
@@ -474,13 +474,13 @@ int main(int argc, char *argv[]){
                 // handle us getting the wrong value back
                 if(net_response != BALANCE)
                 {
-                    printf("transact recieved wrong rsp_type\n");
+                    printf("getBalance recieved wrong rsp_type\n");
                     exit(1);
                 }
                 // get the account number
                 if((amt=read(connfd, &account_num, sizeof(int))) < 1)
                 {
-                    printf("transact failed to read account number\n.");
+                    printf("getBalance failed to read account number\n.");
                     printf("It read %d bytes\n.", amt);
                     exit(1);
                 }
