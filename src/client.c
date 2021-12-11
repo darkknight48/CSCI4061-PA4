@@ -2,8 +2,8 @@
 #include "time.h"
 
 //#define LOCALHOST "127.0.0.1"
-#define MAX 516
-#define NCLIENTS 5
+//#define MAX 516
+//#define NCLIENTS 5
 #define SA struct sockaddr
 
 int connfd;
@@ -16,15 +16,15 @@ void messageError(int sock_fd, msg_enum wrongMsg){
     msg_enum msg = ERROR;
 
     // write the message
-    msg_enum net_msg = htonl(msg);
-    if((amt=write(sock_fd, &net_msg, sizeof(msg_enum))) != sizeof(msg_enum))
+    //msg_enum net_msg = htonl(msg);
+    if((amt=write(sock_fd, &msg, sizeof(msg_enum))) != sizeof(msg_enum))
     {
         printf("messageError failed to write msg_type\n.");
         printf("It wrote %d bytes\n.", amt);
         exit(1);
     }
-    msg_enum net_wrong_msg = htonl(wrongMsg);
-    if((amt=write(sock_fd, &net_wrong_msg, sizeof(msg_enum))) != sizeof(msg_enum))
+    //msg_enum net_wrong_msg = htonl(wrongMsg);
+    if((amt=write(sock_fd, &wrongMsg, sizeof(msg_enum))) != sizeof(msg_enum))
     {
         printf("messageError failed to write wrongMsg\n.");
         printf("It wrote %d bytes\n.", amt);
@@ -37,16 +37,16 @@ void getBalance(int acc_num){
     int amt = 0;
 
     msg_enum get_balance_msg = GET_BALANCE;
-    msg_enum net_get_balance = htonl(get_balance_msg);
-    if(amt = write(connfd, &net_get_balance, sizeof(msg_enum)) != sizeof(msg_enum)){
+    //msg_enum net_get_balance = htonl(get_balance_msg);
+    if(amt = write(connfd, &get_balance_msg, sizeof(msg_enum)) != sizeof(msg_enum)){
         printf("transact failed to write GET_BALANCE\n.");
         printf("It wrote %d bytes\n.", amt);
         exit(1);
     }
 
     //sending the account number for GET_BALANCE
-    int net_acc_num = htonl(acc_num);
-    if(amt = write(connfd, &net_acc_num, sizeof(int)) != sizeof(int)){
+    //int net_acc_num = htonl(acc_num);
+    if(amt = write(connfd, &acc_num, sizeof(int)) != sizeof(int)){
         printf("transact failed to write account number\n.");
         printf("It wrote %d bytes\n.", amt);
         exit(1);
@@ -61,8 +61,8 @@ void requestCash(float val_requested){
     
     msg_enum request_cash_msg = REQUEST_CASH;
 
-    msg_enum net_request_cash_msg = htonl(request_cash_msg);
-    if(amt = write(connfd, &net_request_cash_msg, sizeof(msg_enum)) != sizeof(msg_enum)){
+    //msg_enum net_request_cash_msg = htonl(request_cash_msg);
+    if(amt = write(connfd, &request_cash_msg, sizeof(msg_enum)) != sizeof(msg_enum)){
         printf("transact failed to write REQUEST_CASH\n.");
         printf("It wrote %d bytes\n.", amt);
         exit(1);
@@ -84,10 +84,10 @@ void requestCash(float val_requested){
         printf("It read %d bytes\n.", amt);
         exit(1);
     }
-    net_response = ntohl(rsp_type);
+    //net_response = ntohl(rsp_type);
 
     // handle us getting the wrong value back
-    if(net_response != CASH)
+    if(rsp_type != CASH)
     {
         messageError(connfd, net_response);
         return;
@@ -135,12 +135,12 @@ void transact(int acc_num, float val)
         printf("It read %d bytes\n.", amt);
         exit(1);
     }
-    msg_enum net_response = ntohl(rsp_type);
+    //msg_enum net_response = ntohl(rsp_type);
 
     // handle us getting the wrong value back
-    if(net_response != BALANCE)
+    if(rsp_type != BALANCE)
     {
-        messageError(connfd, net_response);
+        messageError(connfd, rsp_type);
         return;
     }
     // get the account number
@@ -150,7 +150,7 @@ void transact(int acc_num, float val)
         printf("It read %d bytes\n.", amt);
         exit(1);
     }
-    int net_account_num = ntohl(account_num);
+    //int net_account_num = ntohl(account_num);
 
     // get the balance
     if((amt=read(connfd, &balance, sizeof(float))) < 1)
@@ -173,8 +173,8 @@ void transact(int acc_num, float val)
     }
 
     // send TRANSACTION message to the server
-    msg_enum net_transact_msg = htonl(transact_msg);
-    if(amt = write(connfd, &net_transact_msg, sizeof(msg_enum)) != sizeof(msg_enum)){
+    //msg_enum net_transact_msg = htonl(transact_msg);
+    if(amt = write(connfd, &transact_msg, sizeof(msg_enum)) != sizeof(msg_enum)){
         printf("transact failed to write TRANSACT\n.");
         printf("It wrote %d bytes\n.", amt);
         exit(1);
@@ -184,8 +184,8 @@ void transact(int acc_num, float val)
     // variable (deposites increase, withdrawls decrease)
 
     //sending the account number for TRANSACT
-    net_account_num = htonl(acc_num);
-    if(amt = write(connfd, &net_account_num, sizeof(int)) != sizeof(int)){
+    //net_account_num = htonl(acc_num);
+    if(amt = write(connfd, &account_num, sizeof(int)) != sizeof(int)){
         printf("transact failed to write account number\n.");
         printf("It wrote %d bytes\n.", amt);
         exit(1);
@@ -219,8 +219,8 @@ void registrate(int sock_fd, int acc_num, char userName[MAX_STR], char name[MAX_
     // but will be the simplest for you to use
     //
     // write the message type first
-    msg_enum networkMsg = htonl(msg_type);
-    if((amt=write(sock_fd, &networkMsg, sizeof(networkMsg))) != sizeof(networkMsg))
+    //msg_enum networkMsg = htonl(msg_type);
+    if((amt=write(sock_fd, &msg_type, sizeof(msg_enum))) != sizeof(msg_enum))
     {
         printf("registrate failed to write msg_type\n.");
         printf("It wrote %d bytes\n.", amt);
@@ -260,12 +260,12 @@ void registrate(int sock_fd, int acc_num, char userName[MAX_STR], char name[MAX_
         printf("It read %d bytes\n.", amt);
         exit(1);
     }
-    msg_enum hostRsp = ntohl(rsp_type);
+    //msg_enum hostRsp = ntohl(rsp_type);
 
     // handle us getting the wrong value back
-    if(hostRsp != BALANCE)
+    if(rsp_type != BALANCE)
     {
-        messageError(sock_fd, hostRsp);
+        messageError(sock_fd, rsp_type);
         return;
     }
     // get the account number
@@ -275,7 +275,7 @@ void registrate(int sock_fd, int acc_num, char userName[MAX_STR], char name[MAX_
         printf("It read %d bytes\n.", amt);
         exit(1);
     }
-    int hostAcNum = ntohl(servAccNum);
+    //int hostAcNum = ntohl(servAccNum);
     // get the balance
     if((amt=read(sock_fd, &balance, sizeof(float))) != sizeof(float))
     {
@@ -310,16 +310,16 @@ void get_account_info(int sock_fd)
     // but will be the simplest for you to use
     //
     // write the message type first
-    msg_enum networkMsg = htonl(msg_type);
-    if((amt=write(sock_fd, &networkMsg, sizeof(msg_enum))) != sizeof(msg_enum))
+    //msg_enum networkMsg = htonl(msg_type);
+    if((amt=write(sock_fd, &msg_type, sizeof(msg_enum))) != sizeof(msg_enum))
     {
         printf("get_account_info failed to write msg_type\n.");
         printf("It wrote %d bytes\n.", amt);
         exit(1);
     }
     // write the arguments for the message type
-    int net_acc_num = htonl(acc_num);
-    if((amt=write(sock_fd, &net_acc_num, sizeof(int))) != sizeof(int))
+    //int net_acc_num = htonl(acc_num);
+    if((amt=write(sock_fd, &acc_num, sizeof(int))) != sizeof(int))
     {
         printf("get_account_info failed to write acc_num\n.");
         printf("It wrote %d bytes\n.", amt);
@@ -389,13 +389,15 @@ void printSyntax(){
 
 int main(int argc, char *argv[]){
     // argument handling
+    printf("Client created\n");
     if(argc != 4)
     {
         printSyntax();
         return 0;
     }
+
     char* inFilename = argv[1];
-    char* inputFilename;
+    char inputFilename[MAX_STR];
     sprintf(inputFilename, "input/%s", inFilename);
     char* serv_addr = argv[2];
     int PORT = atoi(argv[3]);
@@ -405,13 +407,15 @@ int main(int argc, char *argv[]){
     int sockfd, amt;
     struct sockaddr_in servaddr, cli;
     // socket create and verification
-    // TODO: complete next line (socket)
+    
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd == -1) {
         printf("Socket creation failed...\n");
         exit(0);
-    } else
+    }
+    else{
         printf("Socket created...\n");
+    }
     bzero(&servaddr, sizeof(servaddr));
 
     // assign IP, PORT
@@ -420,7 +424,6 @@ int main(int argc, char *argv[]){
     servaddr.sin_port = htons(PORT);
 
     // connect the client socket to server socket
-    // TODO: fill out if condition (connect)
     if (connect(sockfd, (SA *) &servaddr, sizeof(servaddr)) != 0) {
         printf("Connection with the server failed...\n");
         exit(0);
@@ -482,12 +485,12 @@ int main(int argc, char *argv[]){
                     printf("It read %d bytes\n.", amt);
                     exit(1);
                 }
-                msg_enum net_response = ntohl(rsp_type);
+                //msg_enum net_response = ntohl(rsp_type);
 
                 // handle us getting the wrong value back
-                if(net_response != BALANCE)
+                if(rsp_type != BALANCE)
                 {
-                    messageError(connfd, net_response);
+                    messageError(connfd, rsp_type);
                     continue;
                 }
                 // get the account number
@@ -497,7 +500,7 @@ int main(int argc, char *argv[]){
                     printf("It read %d bytes\n.", amt);
                     exit(1);
                 }
-                int net_account_num = ntohl(account_num);
+                //int net_account_num = ntohl(account_num);
 
                 // get the balance
                 if((amt=read(connfd, &balance, sizeof(float))) < 1)
