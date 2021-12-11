@@ -71,7 +71,7 @@ void requestCash(float val_requested){
         // get the cash amount
         if((amt=read(connfd, &wired_cash, sizeof(float))) < 1)
         {
-            printf("transact failed to read cash amountr\n.");
+            printf("transact failed to read cash amount\n.");
             printf("It read %d bytes\n.", amt);
             exit(1);
         }

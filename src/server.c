@@ -10,7 +10,7 @@
 void write_to_log_file(){
     //iterate over every account in balances[] to log account info to balances.csv
     //format: account number,balance,name,username,birthday  (”%d,%.2f,%s,%s,%ld\n”)
-    
+
     char *balancesFile = "output/balances.csv";
     FILE *fp = fopen(balancesFile, "w");   //write to finalDir
 
@@ -41,7 +41,105 @@ void write_to_log_file(){
     datastructure, it should signal the log thread’s condition variable. This will continue 
     until it receives a TERMINATE query from the client. It will then close the 
     connection and return.*/
-//void pass_to_worker(){}
+void worker_thread(void* arg)
+{
+    int connfd = *(int *)arg;
+    int amt;
+    while(1){
+        msg_enum msg_type;
+        if((amt=read(connfd, &msg_type, sizeof(msg_enum))) != sizeof(msg_enum))
+        {
+            printf("worker failed to read msg_type\n.");
+            printf("It read %d bytes\n.", amt);
+            exit(1);
+        }
+        switch (msg_type){
+            case REGISTER :
+                char username[MAX_STR];
+                char name[MAX_STR];
+                time_t birthday;
+                if((amt=read(connfd, &username, sizeof(char)*MAX_STR)) < 1)
+                {
+                    printf("worker failed to read username\n.");
+                    printf("It wrote %d bytes\n.", amt);
+                    exit(1);
+                }
+                //write the name to client
+                char netNm[MAX_STR] = htonl(name);
+                if((amt=write(connfd, &netNm, sizeof(char)*MAX_STR)) < 1)
+                {
+                    printf("worker failed to write name\n.");
+                    printf("It wrote %d bytes\n.", amt);
+                    exit(1);
+                }
+                //write the birthday to client
+                time_t netBirthday = htonl(birthDay);
+                if((amt=write(connfd, &birthDay, sizeof(time_t))) != sizeof(time_t))
+                {
+                    printf("worker failed to write birthDay\n.");
+                    printf("It wrote %d bytes\n.", amt);
+                    exit(1);
+                }
+            case GET_ACCOUNT_INFO :
+                get_account_info(connfd);
+            case TRANSACT :
+                transact(acc_num, transact_amt);
+            case GET_BALANCE :
+                
+            case REQUEST_CASH :
+
+                float amount;
+
+                // get the cash amount
+                if((amt=read(connfd, &amount, sizeof(float))) < 1)
+                {
+                    printf("worker failed to read cash amount\n.");
+                    printf("It read %d bytes\n.", amt);
+                    exit(1);
+                }
+                float net_amount = ntohl(amount);   //amount to be sent back to client
+
+                msg_enum get_cash_msg = CASH;
+                msg_enum net_get_cash = htonl(get_cash_msg);
+                if(amt = write(&connfd, &net_get_cash, sizeof(msg_enum)) != sizeof(msg_enum)){
+                    printf("worker failed to write CASH\n.");
+                    printf("It wrote %d bytes\n.", amt);
+                    exit(1);
+                }
+
+                //sending the amount for CASH
+                float net_val_requested = htonl(net_amount);
+                if(amt = write(&connfd, &net_val_requested, sizeof(float)) != sizeof(float)){
+                    printf("worker failed to write val_requested\n.");
+                    printf("It wrote %d bytes\n.", amt);
+                    exit(1);
+                }
+
+            case ERROR :
+                
+                int message_type;
+
+                if((amt=read(connfd, &message_type, sizeof(int))) < 1)
+                {
+                    printf("worker failed to read message type\n.");
+                    printf("It read %d bytes\n.", amt);
+                    exit(1);
+                }
+                int message = ntohl(message_type);
+
+                printf("No enumerated message for number: %d\n", message);
+
+            case TERMINATE :
+                terminate(connfd);
+                close(sockfd);
+                sockfd = 0;
+                connfd = sockfd;
+
+    }
+    pthread_mutex_lock(&lock);
+    //sumthin
+    pthread_mutex_unlock(&lock);
+}
 
 void printSyntax(){
     printf("incorrect usage syntax! \n");
