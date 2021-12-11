@@ -40,7 +40,7 @@ typedef enum
 	HISTORY,          // 11
 }msg_enum;
 
-struct message
+/*struct message    everything commented is not in most recent release
 {
     msg_enum msg_type;
     msg_enum err_type;
@@ -51,12 +51,13 @@ struct message
     float cash;
     int num_tx;
     float *history;
-};
+};*/
 
-void writeMessage(int, struct message);
-bool readMessage(int, struct message *);
+//void writeMessage(int, struct message);
+//bool readMessage(int, struct message *);
 
 void bookeepingCode();
 
-#endif
+//char* getMsgEnum(msg_enum msg);
 
+#endif
