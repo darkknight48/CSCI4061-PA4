@@ -2,6 +2,7 @@
 #define SERVER_H
 
 #include "utils.h"
+#include <pthread.h>
 
 // skeleton of a struct to hold account information
 // this should contain information passed with each 
@@ -13,7 +14,11 @@
 // for maintaining synchronization among threads
 struct account
 {
-
+    char username[MAX_STR];
+    char name[MAX_STR];
+    time_t birthday;
+    float balance;
+    pthread_mutex_t lock; // PTHREAD_MUTEX_INITIALIZER;
 };
 
 // array of structs to store account information
