@@ -12,13 +12,12 @@ void account_info(int sock_fd, int accNum){
     //variables to write
     msg_enum msg = ACCOUNT_INFO;
     pthread_mutex_lock(&balances[accNum].lock);
-    char *name = balances[accNum].name; // i'm curious how this will affect passing between sockets
+    char *name = balances[accNum].name;
     char *username = balances[accNum].username;
     time_t birthday = balances[accNum].birthday;
     pthread_mutex_unlock(&balances[accNum].lock);
 
     // write the message type first
-    //msg_enum net_msg = htonl(msg);
     if((amt=write(sock_fd, &msg, sizeof(msg_enum))) != sizeof(msg_enum))
     {
         printf("account_info failed to write msg_type\n.");
@@ -26,15 +25,14 @@ void account_info(int sock_fd, int accNum){
         exit(1);
     }
 
-    //write arguments for message type
     //write the username to client
-    //htonl(&username);
     if((amt=write(sock_fd, username, sizeof(char)*MAX_STR)) < 1)
     {
         printf("account_info failed to write username\n.");
         printf("It wrote %d bytes\n.", amt);
         exit(1);
     }
+
     //write the name to client
     if((amt=write(sock_fd, name, sizeof(char)*MAX_STR)) < 1)
     {
@@ -42,6 +40,7 @@ void account_info(int sock_fd, int accNum){
         printf("It wrote %d bytes\n.", amt);
         exit(1);
     }
+
     //write the birthday to client
     if((amt=write(sock_fd, &birthday, sizeof(time_t))) != sizeof(time_t))
     {
@@ -60,7 +59,6 @@ void cash(int sock_fd, float sentCash){
     msg_enum msg = CASH;
 
     // write the message type first
-    //msg_enum net_msg = htonl(msg);
     if((amt=write(sock_fd, &msg, sizeof(msg_enum))) != sizeof(msg_enum))
     {
         printf("cash failed to write msg_type\n.");
@@ -85,7 +83,6 @@ void balance(int sock_fd, float balance, int acc_num){
     msg_enum msg = BALANCE;
 
     // write the message type first
-    //msg_enum net_msg = htonl(msg);
     if((amt=write(sock_fd, &msg, sizeof(msg_enum))) != sizeof(msg_enum))
     {
         printf("balance failed to write msg_type\n.");
@@ -118,14 +115,13 @@ void messageError(int sock_fd, msg_enum wrongMsg){ // this function is never cal
     msg_enum msg = ERROR;
 
     // write the message
-    //msg_enum net_msg = htonl(msg);
     if((amt=write(sock_fd, &msg, sizeof(msg_enum))) != sizeof(msg_enum))
     {
         printf("messageError failed to write msg_type\n.");
         printf("It wrote %d bytes\n.", amt);
         exit(1);
     }
-    //msg_enum net_wrong_msg = htonl(wrongMsg);
+
     if((amt=write(sock_fd, &wrongMsg, sizeof(msg_enum))) != sizeof(msg_enum))
     {
         printf("messageError failed to write wrongMsg\n.");
@@ -137,6 +133,7 @@ void messageError(int sock_fd, msg_enum wrongMsg){ // this function is never cal
 void* write_to_log_file(){
     //iterate over every account in balances[] to log account info to balances.csv
     //format: account number,balance,name,username,birthday  (”%d,%.2f,%s,%s,%ld\n”)
+
     printf("Log thread started. Waiting 5 seconds\n");
     sleep(7);
     char *balancesFile = "output/balances.csv";
@@ -148,7 +145,7 @@ void* write_to_log_file(){
     }
     int i = 0;
     while(strcmp(balances[i].name,"unused") != 0){
-        //printf("GI\n");
+
         char temp[1024];
 
         //lock
@@ -166,11 +163,13 @@ void* write_to_log_file(){
     fclose(fp);
 }
 
-/*A worker thread will parse each query 
-    received and reply with the appropriate response. If it modifies the global balance 
-    datastructure, it should signal the log thread’s condition variable. This will continue 
-    until it receives a TERMINATE query from the client. It will then close the 
-    connection and return.*/
+/*
+A worker thread will parse each query 
+received and reply with the appropriate response. If it modifies the global balance 
+datastructure, it should signal the log thread’s condition variable. This will continue 
+until it receives a TERMINATE query from the client. It will then close the 
+connection and return.
+*/
 void* worker_thread(void* arg)
 {
     printf("Worker thread started\n");
@@ -190,7 +189,7 @@ void* worker_thread(void* arg)
             fprintf(stderr, "Error opening file: %s\n", strerror( errnum ));
             exit(1);
         }
-        //printf("%d\n", (int)msg_type);
+
         switch (msg_type){
             case REGISTER : ;
                 char username[MAX_STR];
@@ -202,44 +201,43 @@ void* worker_thread(void* arg)
                     printf("It wrote %d bytes\n.", amt);
                     exit(1);
                 }
-                //printf("Server received username: %s\n", username);
+
                 //read the name from client
-                //char netNm[MAX_STR] = htonl(name);
                 if((amt=read(connfd, name, sizeof(char)*MAX_STR)) < 1)
                 {
                     printf("worker failed to read name\n.");
                     printf("It wrote %d bytes\n.", amt);
                     exit(1);
                 }
-                //printf("Server received name: %s\n", name);
+
                 //read the birthday from client
-                //time_t netBirthday = htonl(birthDay);
                 if((amt=read(connfd, &birthday, sizeof(time_t))) != sizeof(time_t))
                 {
                     printf("worker failed to read birthday\n.");
                     printf("It wrote %d bytes\n.", amt);
                     exit(1);
                 }
-                //printf("S\n");
+
                 int i = 0;
                 while(strcmp(balances[i].name, "unused") != 0){
                     i++;
                 }
-                //printf("HI4\n");
+
                 pthread_mutex_init(&balances[i].lock, NULL);
                 pthread_mutex_lock(&balances[i].lock);
+
                 strcpy(balances[i].username, username);
                 strcpy(balances[i].name, name);
+
                 balances[i].birthday = birthday;
                 balances[i].balance = 0;
+
                 pthread_mutex_unlock(&balances[i].lock);
                 retBalance = 0;
-                //printf("Server received: %s %s\n", username, name);
-                //printf("What was stored in balance array: %s %s %.2f\n", balances[i].username, balances[i].name, balances[i].balance);
+                
                 balance(connfd, retBalance, i);
                 break;
             case GET_ACCOUNT_INFO : ;
-                //int acc_num;
                 // reads account number
                 if((amt=read(connfd, &acc_num, sizeof(int))) != sizeof(int))
                 {
@@ -250,8 +248,8 @@ void* worker_thread(void* arg)
                 account_info(connfd, acc_num);
                 break;
             case TRANSACT : ;
-                //int acc_num;
                 float transact_amt;
+
                 // reads account number
                 if((amt=read(connfd, &acc_num, sizeof(int))) != sizeof(int))
                 {
@@ -259,6 +257,7 @@ void* worker_thread(void* arg)
                     printf("It read %d bytes\n.", amt);
                     exit(1);
                 }
+
                 // reads transaction amount
                 if((amt=read(connfd, &transact_amt, sizeof(float))) != sizeof(float))
                 {
@@ -266,6 +265,7 @@ void* worker_thread(void* arg)
                     printf("It read %d bytes\n.", amt);
                     exit(1);
                 }
+
                 if(balances[acc_num].balance >= (-transact_amt)){
                     pthread_mutex_lock(&balances[acc_num].lock);
                     balances[acc_num].balance += transact_amt;
@@ -276,7 +276,6 @@ void* worker_thread(void* arg)
                 
                 break;
             case GET_BALANCE : ;
-                //int acc_num;
                 // reads account number
                 if((amt=read(connfd, &acc_num, sizeof(int))) != sizeof(int))
                 {
@@ -302,7 +301,7 @@ void* worker_thread(void* arg)
                     printf("It read %d bytes\n.", amt);
                     exit(1);
                 }
-                //float net_amount = ntohl(amount);   //amount to be sent back to client
+                //amount to be sent back to client
 
                 cash(connfd, amount);
                 break;
@@ -316,7 +315,6 @@ void* worker_thread(void* arg)
                     printf("It read %d bytes\n.", amt);
                     exit(1);
                 }
-                //int message = ntohl(message_type);
 
                 printf("No enumerated message for number: %d\n", message_type);
                 break;
@@ -325,7 +323,6 @@ void* worker_thread(void* arg)
                 test = 0;
                 break;
         }
-        //printf("E\n");
     }
 }
 
@@ -348,6 +345,7 @@ int main(int argc, char *argv[]){
         strcpy(balances[i].name, "unused"); // this works
     }
     pthread_t tid;
+
     // start a log thread, wait 5 seconds, and write a log to a file
     pthread_create(&tid, NULL, write_to_log_file, NULL);
 
@@ -372,7 +370,6 @@ int main(int argc, char *argv[]){
     servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
     servaddr.sin_port = htons(PORT);
 
-    
     if ((bind(sockfd, (SA *) &servaddr, sizeof(servaddr))) != 0) {
         printf("Socket bind failed...\n");
         exit(0);
@@ -381,8 +378,10 @@ int main(int argc, char *argv[]){
     if ((listen(sockfd, 1)) != 0) {
         printf("Listen failed...\n");
         exit(0);
-    } else
-        //printf("Listening...\n");
+    }
+
+    //Server listening
+
     len = sizeof(cli);
 
 
@@ -393,16 +392,19 @@ int main(int argc, char *argv[]){
     and return to listening on the socket. */
     
     while(1){
-            // Function for chatting between client and server
+
+        // Function for chatting between client and server
         connfd = accept(sockfd, (SA *) &cli, &len); // blocks if doesn't have a connection
         if (connfd < 0) {
             printf("Server accept failed...\n");
             exit(0);
         } 
+        
         printf("Server accepted connection\n");
         pthread_create(&tid, NULL, worker_thread, (void *)&connfd);
         sleep(0.1);
     }
+
     // Server never shut down
     close(connfd);
     close(sockfd);
