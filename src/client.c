@@ -503,6 +503,7 @@ int main(int argc, char *argv[]){
         int num_transactions;
 
         //Use strtok_r to get values from each line
+        char *tokTemp = line;
         char *token = strtok_r(tokTemp, ",", &tokTemp);
         input_msg_type = atoi(token);
         token = strtok_r(tokTemp, ",", &tokTemp);
