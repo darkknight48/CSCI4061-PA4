@@ -126,7 +126,7 @@ void transact(int acc_num, float val)
     msg_enum rsp_type;
     int account_num;
     float balance;
-    float val_requested = 5000;
+    float val_requested = 20000;
 
 
 
@@ -142,6 +142,10 @@ void transact(int acc_num, float val)
     {
         printf("transact failed to read rsp_type\n.");
         printf("It read %d bytes\n.", amt);
+        int errnum = errno;
+        fprintf(stderr, "Value of errno: %d\n", errno);
+        perror("Error printed by perror");
+        fprintf(stderr, "Error opening file: %s\n", strerror( errnum ));
         exit(1);
     }
     printf("Client reading msg: %d\n", (int)rsp_type);
@@ -173,7 +177,7 @@ void transact(int acc_num, float val)
     printf("Client reading balance: %.2f\n", balance);
     //float net_balance = ntohl(balance);
     if(balance < (-val)){ // if the account doesn't have enough money for the desired withdrawl, ignore
-        exit(0);
+        return;
     }
     //only request cash if there isn't enough in the local bank (this client thread)
     //only applicable for withdrawls
@@ -214,7 +218,48 @@ void transact(int acc_num, float val)
         exit(1);
     }
  
+
+    // RECEIVE BALANCE RESPONSE
+
+    if((amt=read(connfd, &rsp_type, sizeof(msg_enum))) != sizeof(msg_enum))
+    {
+        printf("transact failed to read rsp_type\n.");
+        printf("It read %d bytes\n.", amt);
+        int errnum = errno;
+        fprintf(stderr, "Value of errno: %d\n", errno);
+        perror("Error printed by perror");
+        fprintf(stderr, "Error opening file: %s\n", strerror( errnum ));
+        exit(1);
+    }
+    printf("Client reading msg: %d\n", (int)rsp_type);
+    //msg_enum net_response = ntohl(rsp_type);
+
+    // handle us getting the wrong value back
+    if(rsp_type != BALANCE)
+    {
+        messageError(connfd, rsp_type);
+        return;
+    }
+    // get the account number
+    if((amt=read(connfd, &account_num, sizeof(int))) < 1)
+    {
+        printf("transact failed to read account number\n.");
+        printf("It read %d bytes\n.", amt);
+        exit(1);
+    }
+    printf("Client reading account num: %d\n", account_num);
+    //int net_account_num = ntohl(account_num);
+
+    // get the balance
+    if((amt=read(connfd, &balance, sizeof(float))) < 1)
+    {
+        printf("transact failed to read balance\n.");
+        printf("It read %d bytes\n.", amt);
+        exit(1);
+    }
+    printf("Client reading balance: %.2f\n", balance);
     // NOTE: make sure to use proper error handling
+
 }
 
 void registrate(int sock_fd, int acc_num, char userName[MAX_STR], char name[MAX_STR], time_t birthDay)
@@ -277,6 +322,10 @@ void registrate(int sock_fd, int acc_num, char userName[MAX_STR], char name[MAX_
     {
         printf("registrate failed to read rsp_type\n."); //should be BALANCE
         printf("It read %d bytes\n.", amt);
+        int errnum = errno;
+        fprintf(stderr, "Value of errno: %d\n", errno);
+        perror("Error printed by perror");
+        fprintf(stderr, "Error opening file: %s\n", strerror( errnum ));
         exit(1);
     }
     printf("Client reading msg: %d\n", (int)rsp_type);

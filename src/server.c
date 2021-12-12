@@ -138,7 +138,7 @@ void* write_to_log_file(){
     //iterate over every account in balances[] to log account info to balances.csv
     //format: account number,balance,name,username,birthday  (”%d,%.2f,%s,%s,%ld\n”)
     printf("Log thread started. Waiting 5 seconds\n");
-    sleep(5);
+    sleep(7);
     char *balancesFile = "output/balances.csv";
     FILE *fp = fopen(balancesFile, "w");   //write to finalDir
 
@@ -266,14 +266,14 @@ void* worker_thread(void* arg)
                     printf("It read %d bytes\n.", amt);
                     exit(1);
                 }
-                if(balances[acc_num].balance > (-transact_amt)){
+                if(balances[acc_num].balance >= (-transact_amt)){
                     pthread_mutex_lock(&balances[acc_num].lock);
                     balances[acc_num].balance += transact_amt;
                     float retBalance = balances[acc_num].balance;
                     pthread_mutex_unlock(&balances[acc_num].lock);
-
                     balance(connfd, retBalance, acc_num);
                 }
+                
                 break;
             case GET_BALANCE : ;
                 //int acc_num;
