@@ -29,14 +29,14 @@ void account_info(int sock_fd, int accNum){
     //write arguments for message type
     //write the username to client
     //htonl(&username);
-    if((amt=write(sock_fd, &username, sizeof(char)*MAX_STR)) < 1)
+    if((amt=write(sock_fd, username, sizeof(char)*MAX_STR)) < 1)
     {
         printf("account_info failed to write username\n.");
         printf("It wrote %d bytes\n.", amt);
         exit(1);
     }
     //write the name to client
-    if((amt=write(sock_fd, &name, sizeof(char)*MAX_STR)) < 1)
+    if((amt=write(sock_fd, name, sizeof(char)*MAX_STR)) < 1)
     {
         printf("account_info failed to write name\n.");
         printf("It wrote %d bytes\n.", amt);
@@ -77,7 +77,7 @@ void cash(int sock_fd, float sentCash){
     }
 }
 
-void balance(int sock_fd, float balance){
+void balance(int sock_fd, float balance, int acc_num){
     //integer to hold bytes written and read
     int amt = 0;
 
@@ -89,6 +89,14 @@ void balance(int sock_fd, float balance){
     if((amt=write(sock_fd, &msg, sizeof(msg_enum))) != sizeof(msg_enum))
     {
         printf("balance failed to write msg_type\n.");
+        printf("It wrote %d bytes\n.", amt);
+        exit(1);
+    }
+
+    //write the account number
+    if((amt=write(sock_fd, &acc_num, sizeof(int))) != sizeof(int))
+    {
+        printf("balance failed to write account num\n.");
         printf("It wrote %d bytes\n.", amt);
         exit(1);
     }
@@ -169,37 +177,41 @@ void* worker_thread(void* arg)
     int connfd = *(int *)arg;
     int amt, acc_num;
     float retBalance;
-    while(1){
+    int test = 1;
+    while(test){
         msg_enum msg_type;
         if((amt=read(connfd, &msg_type, sizeof(msg_enum))) != sizeof(msg_enum))
         {
             printf("worker failed to read msg_type\n.");
             printf("It read %d bytes\n.", amt);
+            int errnum = errno;
+            fprintf(stderr, "Value of errno: %d\n", errno);
+            perror("Error printed by perror");
+            fprintf(stderr, "Error opening file: %s\n", strerror( errnum ));
             exit(1);
         }
-        printf("%d\n", (int)msg_type);
+        //printf("%d\n", (int)msg_type);
         switch (msg_type){
             case REGISTER : ;
                 char username[MAX_STR];
                 char name[MAX_STR];
                 time_t birthday;
-                printf("HI\n");
-                if((amt=read(connfd, &username, sizeof(char)*MAX_STR)) < 1)
+                if((amt=read(connfd, username, sizeof(char)*MAX_STR)) < 1)
                 {
                     printf("worker failed to read username\n.");
                     printf("It wrote %d bytes\n.", amt);
                     exit(1);
                 }
-                printf("HI1\n");
+                printf("Server received username: %s\n", username);
                 //read the name from client
                 //char netNm[MAX_STR] = htonl(name);
-                if((amt=read(connfd, &name, sizeof(char)*MAX_STR)) < 1)
+                if((amt=read(connfd, name, sizeof(char)*MAX_STR)) < 1)
                 {
                     printf("worker failed to read name\n.");
                     printf("It wrote %d bytes\n.", amt);
                     exit(1);
                 }
-                printf("HI2\n");
+                printf("Server received name: %s\n", name);
                 //read the birthday from client
                 //time_t netBirthday = htonl(birthDay);
                 if((amt=read(connfd, &birthday, sizeof(time_t))) != sizeof(time_t))
@@ -208,12 +220,12 @@ void* worker_thread(void* arg)
                     printf("It wrote %d bytes\n.", amt);
                     exit(1);
                 }
-                printf("HI3\n");
+                //printf("S\n");
                 int i = 0;
                 while(strcmp(balances[i].name, "unused") != 0){
                     i++;
                 }
-                printf("HI4\n");
+                //printf("HI4\n");
                 pthread_mutex_init(&balances[i].lock, NULL);
                 pthread_mutex_lock(&balances[i].lock);
                 strcpy(balances[i].username, username);
@@ -222,9 +234,10 @@ void* worker_thread(void* arg)
                 balances[i].balance = 0;
                 pthread_mutex_unlock(&balances[i].lock);
                 retBalance = 0;
-                printf("%s %s\n", username, name);
-                printf("%s %s %.2f\n", balances[i].username, balances[i].name, balances[i].balance);
-                balance(connfd, retBalance);
+                //printf("Server received: %s %s\n", username, name);
+                printf("What was stored in balance array: %s %s %.2f\n", balances[i].username, balances[i].name, balances[i].balance);
+                balance(connfd, retBalance, i);
+                break;
             case GET_ACCOUNT_INFO : ;
                 //int acc_num;
                 // reads account number
@@ -235,6 +248,7 @@ void* worker_thread(void* arg)
                     exit(1);
                 }
                 account_info(connfd, acc_num);
+                break;
             case TRANSACT : ;
                 //int acc_num;
                 float transact_amt;
@@ -258,8 +272,9 @@ void* worker_thread(void* arg)
                     float retBalance = balances[acc_num].balance;
                     pthread_mutex_unlock(&balances[acc_num].lock);
 
-                    balance(connfd, retBalance);
+                    balance(connfd, retBalance, acc_num);
                 }
+                break;
             case GET_BALANCE : ;
                 //int acc_num;
                 // reads account number
@@ -274,7 +289,8 @@ void* worker_thread(void* arg)
                 retBalance = balances[acc_num].balance;
                 pthread_mutex_unlock(&balances[acc_num].lock);
 
-                balance(connfd, retBalance);
+                balance(connfd, retBalance, acc_num);
+                break;
             case REQUEST_CASH : ;
 
                 float amount;
@@ -289,6 +305,7 @@ void* worker_thread(void* arg)
                 //float net_amount = ntohl(amount);   //amount to be sent back to client
 
                 cash(connfd, amount);
+                break;
             case ERROR : ;
                 
                 int message_type;
@@ -302,12 +319,13 @@ void* worker_thread(void* arg)
                 //int message = ntohl(message_type);
 
                 printf("No enumerated message for number: %d\n", message_type);
-
+                break;
             case TERMINATE : ;
                 close(connfd);
+                test = 0;
                 break;
         }
-        printf("E\n");
+        //printf("E\n");
     }
 }
 
