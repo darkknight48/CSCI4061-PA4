@@ -14,6 +14,7 @@ void messageError(int sock_fd, msg_enum wrongMsg){
     msg_enum msg = ERROR;
 
     // write the message
+    //printf("Client %d writing msg_type: %d\n", sock_fd, (int)msg);
     if((amt=write(sock_fd, &msg, sizeof(msg_enum))) != sizeof(msg_enum))
     {
         printf("messageError failed to write msg_type\n.");
@@ -34,6 +35,7 @@ void getBalance(int acc_num){
     int amt = 0;
 
     msg_enum get_balance_msg = GET_BALANCE;
+    //printf("Client writing msg_type: %d\n", (int)get_balance_msg);
     if(amt = write(connfd, &get_balance_msg, sizeof(msg_enum)) != sizeof(msg_enum)){
         printf("transact failed to write GET_BALANCE\n.");
         printf("It wrote %d bytes\n.", amt);
@@ -41,6 +43,7 @@ void getBalance(int acc_num){
     }
 
     //sending the account number for GET_BALANCE
+    //printf("Client writing acc_num: %d\n", acc_num);
     if(amt = write(connfd, &acc_num, sizeof(int)) != sizeof(int)){
         printf("transact failed to write account number\n.");
         printf("It wrote %d bytes\n.", amt);
@@ -56,12 +59,14 @@ void requestCash(float val_requested){
     
     msg_enum request_cash_msg = REQUEST_CASH;
 
+    //printf("Client writing msg_type: %d\n", (int)request_cash_msg);
     if(amt = write(connfd, &request_cash_msg, sizeof(msg_enum)) != sizeof(msg_enum)){
         printf("transact failed to write REQUEST_CASH\n.");
         printf("It wrote %d bytes\n.", amt);
         exit(1);
     }
     //sending the amount for REQUEST_CASH
+    //printf("Client writing val_requested: %f\n", val_requested);
     if(amt = write(connfd, &val_requested, sizeof(float)) != sizeof(float)){
         printf("transact failed to write val\n.");
         printf("It wrote %d bytes\n.", amt);
@@ -77,11 +82,12 @@ void requestCash(float val_requested){
         printf("It read %d bytes\n.", amt);
         exit(1);
     }
-    
+    //printf("Client reading msg_type: %d\n", (int)rsp_type);
+
     // handle us getting the wrong value back
     if(rsp_type != CASH)
     {
-        messageError(connfd, net_response);
+        messageError(connfd, rsp_type);
         return;
     }
     // get the cash amount
@@ -91,6 +97,7 @@ void requestCash(float val_requested){
         printf("It read %d bytes\n.", amt);
         exit(1);
     }
+    //printf("Client reading wired_cash: %f\n", wired_cash);
     
     cash += wired_cash;
 }
@@ -130,6 +137,7 @@ void transact(int acc_num, float val)
         fprintf(stderr, "Error opening file: %s\n", strerror( errnum ));
         exit(1);
     }
+    //printf("Client reading msg_type: %d\n", (int)rsp_type);
     
     // handle us getting the wrong value back
     if(rsp_type != BALANCE)
@@ -144,6 +152,7 @@ void transact(int acc_num, float val)
         printf("It read %d bytes\n.", amt);
         exit(1);
     }
+    //printf("Client reading acc_num: %d\n", account_num);
     
     // get the balance
     if((amt=read(connfd, &balance, sizeof(float))) < 1)
@@ -152,6 +161,7 @@ void transact(int acc_num, float val)
         printf("It read %d bytes\n.", amt);
         exit(1);
     }
+    //printf("Client reading balance: %f\n", balance);
     
     if(balance < (-val)){ // if the account doesn't have enough money for the desired withdrawl, ignore
         return;
@@ -166,23 +176,26 @@ void transact(int acc_num, float val)
     }
 
     // send TRANSACTION message to the server
+    //printf("Client writing msg_type: %d\n", (int)transact_msg);
     if(amt = write(connfd, &transact_msg, sizeof(msg_enum)) != sizeof(msg_enum)){
         printf("transact failed to write TRANSACT\n.");
         printf("It wrote %d bytes\n.", amt);
         exit(1);
     }
 
-    // add the value of the transaction to the cash
-    // variable (deposites increase, withdrawls decrease)
 
     //sending the account number for TRANSACT
+    //printf("Client writing acc_num: %d\n", account_num);
     if(amt = write(connfd, &account_num, sizeof(int)) != sizeof(int)){
         printf("transact failed to write account number\n.");
         printf("It wrote %d bytes\n.", amt);
         exit(1);
     }
 
+    // add the value of the transaction to the cash
+    // variable (deposites increase, withdrawls decrease)
     //sending the amount for TRANSACT
+    //printf("Client writing transaction: %f\n", val);
     if(amt = write(connfd, &val, sizeof(float)) != sizeof(float)){
         printf("transact failed to write val\n.");
         printf("It wrote %d bytes\n.", amt);
@@ -195,12 +208,13 @@ void transact(int acc_num, float val)
     {
         printf("transact failed to read rsp_type\n.");
         printf("It read %d bytes\n.", amt);
-        int errnum = errno;
+        /*int errnum = errno;
         fprintf(stderr, "Value of errno: %d\n", errno);
         perror("Error printed by perror");
-        fprintf(stderr, "Error opening file: %s\n", strerror( errnum ));
+        fprintf(stderr, "Error opening file: %s\n", strerror( errnum ));*/
         exit(1);
     }
+    //printf("Client reading msg_type: %d\n", (int)rsp_type);
     
     // handle us getting the wrong value back
     if(rsp_type != BALANCE)
@@ -215,6 +229,7 @@ void transact(int acc_num, float val)
         printf("It read %d bytes\n.", amt);
         exit(1);
     }
+    //printf("Client reading acc_num: %d\n", account_num);
     
     // get the balance
     if((amt=read(connfd, &balance, sizeof(float))) < 1)
@@ -223,13 +238,14 @@ void transact(int acc_num, float val)
         printf("It read %d bytes\n.", amt);
         exit(1);
     }
+    //printf("Client reading balance: %f\n", balance);
     // NOTE: make sure to use proper error handling
 
 }
 
 void registrate(int sock_fd, int acc_num, char userName[MAX_STR], char name[MAX_STR], time_t birthDay)
 {
-// integer to hold number of bytes read/written
+    // integer to hold number of bytes read/written
     int amt = 0;
 
     // variables to write to the socket
@@ -244,6 +260,7 @@ void registrate(int sock_fd, int acc_num, char userName[MAX_STR], char name[MAX_
     // but will be the simplest for you to use
     //
     // write the message type first
+    //printf("Client writing msg_type: %d\n", (int)msg_type);
     if((amt=write(sock_fd, &msg_type, sizeof(msg_enum))) != sizeof(msg_enum))
     {
         printf("registrate failed to write msg_type\n.");
@@ -251,6 +268,7 @@ void registrate(int sock_fd, int acc_num, char userName[MAX_STR], char name[MAX_
         exit(1);
     }
     //write the username to client
+    //printf("Client writing username: %s\n", userName);
     if((amt=write(sock_fd, userName, sizeof(char)*MAX_STR)) < 1)
     {
         printf("registrate failed to write userName\n.");
@@ -258,6 +276,7 @@ void registrate(int sock_fd, int acc_num, char userName[MAX_STR], char name[MAX_
         exit(1);
     }
     //write the name to client
+    //printf("Client writing name: %s\n", name);
     if((amt=write(sock_fd, name, sizeof(char)*MAX_STR)) < 1)
     {
         printf("registrate failed to write name\n.");
@@ -265,6 +284,7 @@ void registrate(int sock_fd, int acc_num, char userName[MAX_STR], char name[MAX_
         exit(1);
     }
     //write the birthday to client
+    //printf("Client writing birthday\n");
     if((amt=write(sock_fd, &birthDay, sizeof(time_t))) != sizeof(time_t))
     {
         printf("registrate failed to write birthDay\n.");
@@ -279,12 +299,13 @@ void registrate(int sock_fd, int acc_num, char userName[MAX_STR], char name[MAX_
     {
         printf("registrate failed to read rsp_type\n."); //should be BALANCE
         printf("It read %d bytes\n.", amt);
-        int errnum = errno;
+        /*int errnum = errno;
         fprintf(stderr, "Value of errno: %d\n", errno);
         perror("Error printed by perror");
-        fprintf(stderr, "Error opening file: %s\n", strerror( errnum ));
+        fprintf(stderr, "Error opening file: %s\n", strerror( errnum ));*/
         exit(1);
     }
+    //printf("Client reading msg_type: %d\n", (int)rsp_type);
     
     // handle us getting the wrong value back
     if(rsp_type != BALANCE)
@@ -299,6 +320,7 @@ void registrate(int sock_fd, int acc_num, char userName[MAX_STR], char name[MAX_
         printf("It read %d bytes\n.", amt);
         exit(1);
     }
+    //printf("Client reading acc_num: %d\n", servAccNum);
     // get the balance
     if((amt=read(sock_fd, &balance, sizeof(float))) != sizeof(float))
     {
@@ -306,6 +328,7 @@ void registrate(int sock_fd, int acc_num, char userName[MAX_STR], char name[MAX_
         printf("It read %d bytes\n.", amt);
         exit(1);
     }
+    //printf("Client reading balance: %f\n", balance);
 
 }
 
@@ -331,6 +354,7 @@ void get_account_info(int sock_fd)
     // but will be the simplest for you to use
     //
     // write the message type first
+    //printf("Client writing msg_type: %d\n", (int)msg_type);
     if((amt=write(sock_fd, &msg_type, sizeof(msg_enum))) != sizeof(msg_enum))
     {
         printf("get_account_info failed to write msg_type\n.");
@@ -338,6 +362,7 @@ void get_account_info(int sock_fd)
         exit(1);
     }
     // write the arguments for the message type
+    //printf("Client writing acc_num: %d\n", acc_num);
     if((amt=write(sock_fd, &acc_num, sizeof(int))) != sizeof(int))
     {
         printf("get_account_info failed to write acc_num\n.");
@@ -354,8 +379,9 @@ void get_account_info(int sock_fd)
         printf("It read %d bytes\n.", amt);
         exit(1);
     }
+    //printf("Client reading msg_type: %d\n", (int)rsp_type);
     // handle us getting the wrong value back
-    else if(rsp_type != ACCOUNT_INFO)
+    if(rsp_type != ACCOUNT_INFO)
     {
         messageError(sock_fd, rsp_type);
         return;
@@ -367,6 +393,7 @@ void get_account_info(int sock_fd)
         printf("It read %d bytes\n.", amt);
         exit(1);
     }
+    //printf("Client reading username: %s\n", username);
     // get the name
     if((amt=read(sock_fd, name, sizeof(char)*MAX_STR)) < 1)
     {
@@ -374,6 +401,7 @@ void get_account_info(int sock_fd)
         printf("It read %d bytes\n.", amt);
         exit(1);
     }
+    //printf("Client reading name: %s\n", name);
     // get the birthday
     if((amt=read(sock_fd, &birthday, sizeof(time_t))) != sizeof(time_t))
     {
@@ -381,6 +409,7 @@ void get_account_info(int sock_fd)
         printf("It read %d bytes\n.", amt);
         exit(1);
     }
+    //printf("Client reading birthday\n");
 }
 
 
@@ -393,6 +422,7 @@ void terminate(int sock_fd){
     msg_enum msg = TERMINATE;
 
     // write the message
+    //printf("Client writing msg_type: %d\n", (int)msg);
     if((amt=write(sock_fd, &msg, sizeof(msg_enum))) != sizeof(msg_enum))
     {
         printf("messageError failed to write msg_type\n.");
@@ -423,7 +453,6 @@ int main(int argc, char *argv[]){
     struct timeval start;
     struct timeval end;
     gettimeofday(&start, NULL);
-    //time_t t1 = time(NULL);
     
     int sockfd, amt;
     struct sockaddr_in servaddr, cli;
@@ -447,6 +476,7 @@ int main(int argc, char *argv[]){
         printf("Connection with the server failed...\n");
         exit(0);
     } 
+    //printf("Client connected with server\n");
     
     connfd = sockfd;
     FILE *fp;
@@ -469,6 +499,7 @@ int main(int argc, char *argv[]){
                 printf("Reconnection with the server failed...\n");
                 exit(0);
             } 
+            //printf("Client reconnected with server\n");
 
             connfd = sockfd;
         }
@@ -523,6 +554,7 @@ int main(int argc, char *argv[]){
                     printf("It read %d bytes\n.", amt);
                     exit(1);
                 }
+                //printf("Client reading msg_type: %d\n", (int)rsp_type);
                 
                 // handle us getting the wrong value back
                 if(rsp_type != BALANCE)
@@ -537,6 +569,7 @@ int main(int argc, char *argv[]){
                     printf("It read %d bytes\n.", amt);
                     exit(1);
                 }
+                //printf("Client reading acc_num: %d\n", account_num);
                 
                 // get the balance
                 if((amt=read(connfd, &balance, sizeof(float))) < 1)
@@ -545,6 +578,7 @@ int main(int argc, char *argv[]){
                     printf("It read %d bytes\n.", amt);
                     exit(1);
                 }
+                //printf("Client reading balance: %f\n", balance);
                 break;
             case REQUEST_CASH :
                 requestCash(transact_amt);
@@ -561,15 +595,13 @@ int main(int argc, char *argv[]){
         }
         
     }
-    terminate(sockfd);
-    close(sockfd);
-    sockfd = 0;
-    connfd = sockfd;
+    if(sockfd != 0){
+        terminate(sockfd);
+        close(sockfd);
+        sockfd = 0;
+        connfd = sockfd;
+    }
 
-    //time_t t2 = time(NULL);
-    //time_t elapTime = t2 - t1;
-    //double printedTime = (double)elapTime;
-    //printf("Elapsed Time: %.2f\n", printedTime);
     gettimeofday(&end, NULL);
     
     float elapTime = (end.tv_sec - start.tv_sec) + 1e-6*(end.tv_usec - start.tv_usec);

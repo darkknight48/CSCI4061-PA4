@@ -9,7 +9,7 @@ void account_info(int sock_fd, int accNum){
     //variables to write
     msg_enum msg = ACCOUNT_INFO;
     pthread_mutex_lock(&balances[accNum].lock);
-    char *name = balances[accNum].name; // i'm curious how this will affect passing between sockets
+    char *name = balances[accNum].name; 
     char *username = balances[accNum].username;
     time_t birthday = balances[accNum].birthday;
     pthread_mutex_unlock(&balances[accNum].lock);
@@ -129,7 +129,7 @@ void messageError(int sock_fd, msg_enum wrongMsg){ // this function is never cal
 void* write_to_log_file(){
     //iterate over every account in balances[] to log account info to balances.csv
     //format: account number,balance,name,username,birthday  (”%d,%.2f,%s,%s,%ld\n”)
-    sleep(5);
+    sleep(9);
     char *balancesFile = "output/balances.csv";
     FILE *fp = fopen(balancesFile, "w");   //write to finalDir
 
@@ -139,7 +139,6 @@ void* write_to_log_file(){
     }
     int i = 0;
     while(strcmp(balances[i].name,"unused") != 0){
-        //printf("GI\n");
         char temp[1024];
 
         //lock
@@ -164,6 +163,7 @@ void* write_to_log_file(){
     connection and return.*/
 void* worker_thread(void* arg)
 {
+    //printf("Worker thread started...\n");
     int connfd = *(int *)arg;
     int amt, acc_num;
     float retBalance;
@@ -250,14 +250,15 @@ void* worker_thread(void* arg)
                     printf("It read %d bytes\n.", amt);
                     exit(1);
                 }
+                pthread_mutex_lock(&balances[acc_num].lock);
                 if(balances[acc_num].balance >= (-transact_amt)){
-                    pthread_mutex_lock(&balances[acc_num].lock);
+
                     balances[acc_num].balance += transact_amt;
                     float retBalance = balances[acc_num].balance;
-                    pthread_mutex_unlock(&balances[acc_num].lock);
+
                     balance(connfd, retBalance, acc_num);
                 }
-                
+                pthread_mutex_unlock(&balances[acc_num].lock);
                 break;
             case GET_BALANCE : ;
                 // reads account number
@@ -299,11 +300,12 @@ void* worker_thread(void* arg)
                     exit(1);
                 }
                 
-                if((int)message_type != 8){
+                if(message_type != 8){
                     printf("No enumerated message for number: %d\n", message_type);
                 }
                 break;
             case TERMINATE : ;
+                //printf("Worker read a TERMINATE message\n");
                 close(connfd);
                 test = 0;
                 break;
@@ -330,7 +332,7 @@ int main(int argc, char *argv[]){
         strcpy(balances[i].name, "unused"); // this works
     }
     pthread_t tid;
-    // start a log thread, wait 5 seconds, and write a log to a file
+    // start a log thread, wait 7 seconds, and write a log to a file
     pthread_create(&tid, NULL, write_to_log_file, NULL);
 
 
@@ -373,16 +375,19 @@ int main(int argc, char *argv[]){
     /*For each incoming connection, the server will create a worker thread 
     which will handle the connection (pass it the connection’s file descriptor) 
     and return to listening on the socket. */
-    
+    int connfds[100];
+    int q =0;
     while(1){
-            // Function for chatting between client and server
-        connfd = accept(sockfd, (SA *) &cli, &len); // blocks if doesn't have a connection
-        if (connfd < 0) {
+        connfds[q] = accept(sockfd, (SA *) &cli, &len); // blocks if doesn't have a connection
+        if (connfds[q] < 0) {
             printf("Server accept failed...\n");
             exit(0);
         } 
-        pthread_create(&tid, NULL, worker_thread, (void *)&connfd);
-        sleep(0.1);
+        //printf("Server accepted connection\n");
+        // Function for chatting between client and server
+        pthread_create(&tid, NULL, worker_thread, (void*)&connfds[q]);
+        sleep(0.3);
+        q++;
     }
     // Server never shut down
 
