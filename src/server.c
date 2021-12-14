@@ -2,6 +2,9 @@
 
 #define SA struct sockaddr
 
+sem_t sem_worker;
+sem_t sem_main;
+
 void account_info(int sock_fd, int accNum){
     //integer to hold bytes written and read
     int amt = 0;
@@ -164,7 +167,9 @@ void* write_to_log_file(){
 void* worker_thread(void* arg)
 {
     //printf("Worker thread started...\n");
+    sem_wait(&sem_worker);
     int connfd = *(int *)arg;
+    sem_post(&sem_main);
     int amt, acc_num;
     float retBalance;
     int test = 1;
@@ -375,19 +380,27 @@ int main(int argc, char *argv[]){
     /*For each incoming connection, the server will create a worker thread 
     which will handle the connection (pass it the connection’s file descriptor) 
     and return to listening on the socket. */
-    int connfds[100];
-    int q =0;
+    //int connfds[100];
+    //int q =0;
+    //int connfd;
+    int temp;
+    sem_init(&sem_main, 0, 1);
+    sem_init(&sem_worker, 0, 1);
     while(1){
-        connfds[q] = accept(sockfd, (SA *) &cli, &len); // blocks if doesn't have a connection
-        if (connfds[q] < 0) {
+        //connfds[q] = accept(sockfd, (SA *) &cli, &len); // blocks if doesn't have a connection
+        connfd = accept(sockfd, (SA *) &cli, &len);
+        if (connfd < 0) {
             printf("Server accept failed...\n");
             exit(0);
         } 
+        sem_wait(&sem_main);
+        temp = connfd;
+        sem_post(&sem_worker);
         //printf("Server accepted connection\n");
         // Function for chatting between client and server
-        pthread_create(&tid, NULL, worker_thread, (void*)&connfds[q]);
-        sleep(0.3);
-        q++;
+        pthread_create(&tid, NULL, worker_thread, (void*)&temp);
+        //sleep(0.3);
+        //q++;
     }
     // Server never shut down
 
