@@ -19,7 +19,7 @@ struct account
     char name[MAX_STR];
     time_t birthday;
     float balance;
-    pthread_mutex_t lock; // PTHREAD_MUTEX_INITIALIZER;
+    pthread_mutex_t lock; 
 };
 
 // array of structs to store account information

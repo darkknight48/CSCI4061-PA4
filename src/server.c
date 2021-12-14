@@ -132,9 +132,9 @@ void messageError(int sock_fd, msg_enum wrongMsg){ // this function is never cal
 void* write_to_log_file(){
     //iterate over every account in balances[] to log account info to balances.csv
     //format: account number,balance,name,username,birthday  (”%d,%.2f,%s,%s,%ld\n”)
-    sleep(9);
+    sleep(8);
     char *balancesFile = "output/balances.csv";
-    FILE *fp = fopen(balancesFile, "w");   //write to finalDir
+    FILE *fp = fopen(balancesFile, "w");   //write to output balances file
 
     if(fp == NULL){
         printf("ERROR: failed to create %s\n", balancesFile);
@@ -166,7 +166,6 @@ void* write_to_log_file(){
     connection and return.*/
 void* worker_thread(void* arg)
 {
-    //printf("Worker thread started...\n");
     sem_wait(&sem_worker);
     int connfd = *(int *)arg;
     sem_post(&sem_main);
@@ -179,10 +178,6 @@ void* worker_thread(void* arg)
         {
             printf("worker failed to read msg_type\n.");
             printf("It read %d bytes\n.", amt);
-            int errnum = errno;
-            fprintf(stderr, "Value of errno: %d\n", errno);
-            perror("Error printed by perror");
-            fprintf(stderr, "Error opening file: %s\n", strerror( errnum ));
             exit(1);
         }
         
@@ -310,7 +305,6 @@ void* worker_thread(void* arg)
                 }
                 break;
             case TERMINATE : ;
-                //printf("Worker read a TERMINATE message\n");
                 close(connfd);
                 test = 0;
                 break;
@@ -334,10 +328,10 @@ int main(int argc, char *argv[]){
     // create empty output folder
     bookeepingCode();
     for(int i = 0; i < 1023; i++){
-        strcpy(balances[i].name, "unused"); // this works
+        strcpy(balances[i].name, "unused"); // this is to give a concrete value for unused slots to check with
     }
     pthread_t tid;
-    // start a log thread, wait 7 seconds, and write a log to a file
+    // start a log thread, wait 8 seconds, and write a log to a file
     pthread_create(&tid, NULL, write_to_log_file, NULL);
 
 
@@ -375,19 +369,13 @@ int main(int argc, char *argv[]){
     len = sizeof(cli);
 
 
-
-        
     /*For each incoming connection, the server will create a worker thread 
     which will handle the connection (pass it the connection’s file descriptor) 
     and return to listening on the socket. */
-    //int connfds[100];
-    //int q =0;
-    //int connfd;
     int temp;
     sem_init(&sem_main, 0, 1);
     sem_init(&sem_worker, 0, 1);
     while(1){
-        //connfds[q] = accept(sockfd, (SA *) &cli, &len); // blocks if doesn't have a connection
         connfd = accept(sockfd, (SA *) &cli, &len);
         if (connfd < 0) {
             printf("Server accept failed...\n");
@@ -396,11 +384,8 @@ int main(int argc, char *argv[]){
         sem_wait(&sem_main);
         temp = connfd;
         sem_post(&sem_worker);
-        //printf("Server accepted connection\n");
-        // Function for chatting between client and server
+        // Launch worker thread to handle client connection
         pthread_create(&tid, NULL, worker_thread, (void*)&temp);
-        //sleep(0.3);
-        //q++;
     }
     // Server never shut down
 
